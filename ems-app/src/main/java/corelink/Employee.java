@@ -1,3 +1,5 @@
+package companyz;
+
 public class Employee {
     private int empid;
     private String firstName;
