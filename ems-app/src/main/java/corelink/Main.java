@@ -1,6 +1,8 @@
-package companyz;
+package corelink;
 
+import java.sql.Connection;
 import java.sql.Date;
+import java.sql.SQLException;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Scanner;
@@ -11,8 +13,23 @@ public class Main {
     private static final EmployeeDAO employeeDAO = new EmployeeDAO();
     private static final PayrollDAO payrollDAO = new PayrollDAO();
     private static final Reports reports = new Reports();
+    private static AddressDAO addressDAO = new AddressDAO();
+
+
 
     public static void main(String[] args) {
+
+        //very basic test of DB connection
+        try (Connection conn = Database.getConnection()) {
+            if (conn != null) {
+                System.out.println("Database connection successful!");
+            } else {
+                System.out.println("Failed to connect to database.");
+            }
+        } catch (SQLException e) {
+            System.out.println("Error connecting to database: " + e.getMessage());
+        }
+
         while (true) {
             System.out.println("=== Company Z Employee Management System ===");
             System.out.println("1. HR Admin Login");
@@ -91,7 +108,9 @@ public class Main {
             System.out.println("2. Add New Employee");
             System.out.println("3. Update Employee Basic Data");
             System.out.println("4. Increase Salary by % in Range");
-            System.out.println("5. Reports");
+            System.out.println("5. Delete Employee");
+            System.out.println("6. Address / Demographics");
+            System.out.println("7. Reports");
             System.out.println("0. Logout");
             System.out.print("Choice: ");
             String choice = scanner.nextLine();
@@ -110,6 +129,12 @@ public class Main {
                     hrIncreaseSalary();
                     break;
                 case "5":
+                    hrDeleteEmployee();
+                    break;
+                case "6":
+                    hrAddressMenu();
+                    break;
+                case "7":
                     hrReportsMenu();
                     break;
                 case "0":
@@ -121,6 +146,137 @@ public class Main {
         }
     }
 
+    // HR Address Menu 
+    private static void hrAddressMenu() {
+        while (true) {
+            System.out.println("=== HR Address Menu ===");
+            System.out.println("1. Add Employee Address");
+            System.out.println("2. Update Employee Address");
+            System.out.println("3. View Employee Address");
+            System.out.println("0. Back");
+            System.out.print("Choice: ");
+            String choice = scanner.nextLine();
+
+            switch (choice) {
+                case "1":
+                    addEmployeeAddress();
+                    break;
+                case "2":
+                    updateEmployeeAddress();
+                    break;
+                case "3":
+                    viewEmployeeAddress();
+                    break;
+                case "0":
+                    return;
+                default:
+                    System.out.println("Invalid choice.\n");
+            }
+        }
+    }
+
+    // Add Employee Address 
+    private static void addEmployeeAddress() {
+        try {
+            System.out.print("EmpID: ");
+            int empid = Integer.parseInt(scanner.nextLine());
+            System.out.print("Street: ");
+            String street = scanner.nextLine();
+            System.out.print("City ID: ");
+            int cityId = Integer.parseInt(scanner.nextLine());
+            System.out.print("State ID: ");
+            int stateId = Integer.parseInt(scanner.nextLine());
+            System.out.print("Zip: ");
+            String zip = scanner.nextLine();
+            System.out.print("Gender: ");
+            String gender = scanner.nextLine();
+            System.out.print("Race: ");
+            String race = scanner.nextLine();
+            System.out.print("DOB (YYYY-MM-DD): ");
+            Date dob = Date.valueOf(scanner.nextLine());
+            System.out.print("Mobile phone: ");
+            String phone = scanner.nextLine();
+
+            boolean success = addressDAO.addAddress(empid, street, cityId, stateId, zip, gender, race, dob, phone);
+            System.out.println(success ? "Address added successfully.\n" : "Failed to add address.\n");
+
+        } catch (Exception ex) {
+            System.out.println("Error adding address: " + ex.getMessage() + "\n");
+        }
+    }
+
+    // Update Employee Address 
+    private static void updateEmployeeAddress() {
+        try {
+            System.out.print("EmpID to update: ");
+            int empid = Integer.parseInt(scanner.nextLine());
+
+            Address existing = addressDAO.getAddressByEmpId(empid);
+            if (existing == null) {
+                System.out.println("Employee address not found.\n");
+                return;
+            }
+
+            System.out.println("Leave field blank to keep existing value.");
+            System.out.print("Street (" + existing.getStreet() + "): ");
+            String street = scanner.nextLine();
+            street = street.isEmpty() ? existing.getStreet() : street;
+
+            System.out.print("City ID (" + existing.getCityId() + "): ");
+            String cityInput = scanner.nextLine();
+            int cityId = cityInput.isEmpty() ? existing.getCityId() : Integer.parseInt(cityInput);
+
+            System.out.print("State ID (" + existing.getStateId() + "): ");
+            String stateInput = scanner.nextLine();
+            int stateId = stateInput.isEmpty() ? existing.getStateId() : Integer.parseInt(stateInput);
+
+            System.out.print("Zip (" + existing.getZip() + "): ");
+            String zip = scanner.nextLine();
+            zip = zip.isEmpty() ? existing.getZip() : zip;
+
+            System.out.print("Gender (" + existing.getGender() + "): ");
+            String gender = scanner.nextLine();
+            gender = gender.isEmpty() ? existing.getGender() : gender;
+
+            System.out.print("Race (" + existing.getIdentifiedRace() + "): ");
+            String race = scanner.nextLine();
+            race = race.isEmpty() ? existing.getIdentifiedRace() : race;
+
+            System.out.print("DOB (" + existing.getDob() + "): ");
+            String dobInput = scanner.nextLine();
+            Date dob = dobInput.isEmpty() ? existing.getDob() : Date.valueOf(dobInput);
+
+
+            System.out.print("Mobile phone (" + existing.getMobilePhone() + "): ");
+            String phone = scanner.nextLine();
+            phone = phone.isEmpty() ? existing.getMobilePhone() : phone;
+
+            boolean success = addressDAO.updateAddress(empid, street, cityId, stateId, zip, gender, race, dob, phone);
+            System.out.println(success ? "Address updated successfully.\n" : "Failed to update address.\n");
+
+        } catch (Exception ex) {
+            System.out.println("Error updating address: " + ex.getMessage() + "\n");
+        }
+    }
+
+    // View Employee Address 
+    private static void viewEmployeeAddress() {
+    try {
+        System.out.print("EmpID to view: ");
+        int empid = Integer.parseInt(scanner.nextLine());
+
+        Address addr = addressDAO.getAddressByEmpId(empid);
+        if (addr == null) {
+            System.out.println("Employee address not found.\n");
+        } else {
+            System.out.println("Employee Address Info:");
+            System.out.println(addr);
+        }
+    } catch (Exception ex) {
+        System.out.println("Error viewing address: " + ex.getMessage() + "\n");
+    }
+}
+   
     private static void hrSearchEmployee() {
         System.out.print("First name (or blank): ");
         String fn = scanner.nextLine();
@@ -223,6 +379,17 @@ public class Main {
 
         } catch (Exception ex) {
             System.out.println("Error increasing salary: " + ex.getMessage() + "\n");
+        }
+    }
+
+    private static void hrDeleteEmployee() {
+        try {
+            System.out.print("Enter EmpID to delete: ");
+            int empid = Integer.parseInt(scanner.nextLine());
+            employeeDAO.deleteEmployee(empid);
+            System.out.println();
+        } catch (Exception ex) {
+            System.out.println("Error deleting employee: " + ex.getMessage() + "\n");
         }
     }
 

@@ -1,4 +1,5 @@
-package companyz;
+package corelink;
+
 
 public class Employee {
     private int empid;
