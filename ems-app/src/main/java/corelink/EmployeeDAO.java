@@ -1,6 +1,11 @@
-package companyz;
+package corelink;
 
-import java.sql.*;
+import java.sql.Connection;
+import java.sql.Date;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -71,6 +76,13 @@ public class EmployeeDAO {
     // Add new employee (basic info only for now)
     public int addEmployee(String firstName, String lastName, String ssn,
                            Date dob, Date hireDate, double baseSalary) {
+        // Optional: Prevent duplicate SSNs
+        List<Employee> duplicates = searchEmployees(null, null, ssn, null);
+        if (!duplicates.isEmpty()) {
+            System.out.println("Employee with this SSN already exists.");
+            return -1;
+        }
+
         String sql = "INSERT INTO employees " +
                      "(first_name, last_name, ssn, dob, hire_date, base_salary, status) " +
                      "VALUES (?, ?, ?, ?, ?, ?, 'ACTIVE')";
@@ -141,6 +153,22 @@ public class EmployeeDAO {
 
         } catch (SQLException ex) {
             System.out.println("Error in increaseSalaryByRange: " + ex.getMessage());
+        }
+    }
+
+    // Delete an employee by empid (HR only)
+    public void deleteEmployee(int empid) {
+        String sql = "DELETE FROM employees WHERE empid = ?";
+
+        try (Connection conn = Database.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setInt(1, empid);
+            int rows = ps.executeUpdate();
+            System.out.println("Deleted " + rows + " employee(s).");
+
+        } catch (SQLException ex) {
+            System.out.println("Error in deleteEmployee: " + ex.getMessage());
         }
     }
 }
