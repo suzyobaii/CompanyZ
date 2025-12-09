@@ -26,6 +26,7 @@ public class GUIMain extends JFrame {
     private static final EmployeeDAO employeeDAO = new EmployeeDAO();
     private static final PayrollDAO payrollDAO = new PayrollDAO();
     private static final Reports reports = new Reports();
+    private static final AddressDAO addressDAO = NewAddressDAO():
 
     private JTextArea outputArea;
     private JPanel loginPanel;
@@ -383,6 +384,123 @@ public class GUIMain extends JFrame {
         dialog.setVisible(true);
     }
 
+    private void hrAddressMenu() {
+        JPanel panel = new JPanel(new GridLayout(4, 1));
+        JButton addBtn = new JButton("Add Address");
+        JButton updateBtn = new JButton("Update Address");
+        JButton viewBtn = new JButton("View Address");
+        JButton backBtn = new JButton("Back");
+
+        addBtn.addActionListener(e -> addEmployeeAddress());
+        updateBtn.addActionListener(e -> updateEmployeeAddress());
+        viewBtn.addActionListener(e -> viewEmployeeAddress());
+        backBtn.addActionListener(e -> {
+        }); // Placeholder, as it's modal
+
+        panel.add(addBtn);
+        panel.add(updateBtn);
+        panel.add(viewBtn);
+        panel.add(backBtn);
+
+        JDialog dialog = new JDialog(this, "Address Menu", true);
+        dialog.setContentPane(panel);
+        dialog.pack();
+        dialog.setLocationRelativeTo(this);
+        dialog.setVisible(true);
+    }
+
+    private void addEmployeeAddress() {
+        JPanel form = new JPanel(new GridLayout(10, 2));
+        JTextField empIdField = new JTextField();
+        JTextField streetField = new JTextField();
+        JTextField cityIdField = new JTextField();
+        JTextField stateIdField = new JTextField();
+        JTextField zipField = new JTextField();
+        JTextField genderField = new JTextField();
+        JTextField raceField = new JTextField();
+        JTextField dobField = new JTextField();
+        JTextField phoneField = new JTextField();
+        JButton addBtn = new JButton("Add");
+
+        form.add(new JLabel("EmpID:"));
+        form.add(empIdField);
+        form.add(new JLabel("Street:"));
+        form.add(streetField);
+        form.add(new JLabel("City ID:"));
+        form.add(cityIdField);
+        form.add(new JLabel("State ID:"));
+        form.add(stateIdField);
+        form.add(new JLabel("Zip:"));
+        form.add(zipField);
+        form.add(new JLabel("Gender:"));
+        form.add(genderField);
+        form.add(new JLabel("Race:"));
+        form.add(raceField);
+        form.add(new JLabel("DOB (YYYY-MM-DD):"));
+        form.add(dobField);
+        form.add(new JLabel("Phone:"));
+        form.add(phoneField);
+        form.add(addBtn);
+
+        JDialog dialog = new JDialog(this, "Add Address", true);
+        dialog.setContentPane(form);
+        dialog.pack();
+        dialog.setLocationRelativeTo(this);
+
+        addBtn.addActionListener(e -> {
+            try {
+                boolean success = addressDAO.addAddress(
+                        Integer.parseInt(empIdField.getText()),
+                        streetField.getText(),
+                        Integer.parseInt(cityIdField.getText()),
+                        Integer.parseInt(stateIdField.getText()),
+                        zipField.getText(),
+                        genderField.getText(),
+                        raceField.getText(),
+                        Date.valueOf(dobField.getText()),
+                        phoneField.getText()
+                );
+                outputArea.append(success ? "Address added.\n" : "Failed to add address.\n");
+                dialog.dispose();
+            } catch (Exception ex) {
+                JOptionPane.showMessageDialog(dialog, "Error: " + ex.getMessage());
+            }
+        });
+
+        dialog.setVisible(true);
+    }
+    
+ private void viewEmployeeAddress() {
+        JPanel form = new JPanel(new GridLayout(2, 2));
+        JTextField empIdField = new JTextField();
+        JButton viewBtn = new JButton("View");
+
+        form.add(new JLabel("EmpID:"));
+        form.add(empIdField);
+        form.add(viewBtn);
+
+        JDialog dialog = new JDialog(this, "View Address", true);
+        dialog.setContentPane(form);
+        dialog.pack();
+        dialog.setLocationRelativeTo(this);
+
+        viewBtn.addActionListener(e -> {
+            try {
+                Address addr = addressDAO.getAddressByEmpId(Integer.parseInt(empIdField.getText()));
+                if (addr != null) {
+                    outputArea.setText(addr.toString());
+                } else {
+                    outputArea.setText("Address not found.\n");
+                }
+                dialog.dispose();
+            } catch (Exception ex) {
+                JOptionPane.showMessageDialog(dialog, "Error: " + ex.getMessage());
+            }
+        });
+
+        dialog.setVisible(true);
+    }
+    
     private void hrReportsMenu() {
         JPanel panel = new JPanel(new GridLayout(4, 1));
         JButton report1Btn = new JButton("Total Pay by Job Title");
