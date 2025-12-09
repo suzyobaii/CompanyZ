@@ -26,7 +26,7 @@ public class GUIMain extends JFrame {
     private static final EmployeeDAO employeeDAO = new EmployeeDAO();
     private static final PayrollDAO payrollDAO = new PayrollDAO();
     private static final Reports reports = new Reports();
-    private static final AddressDAO addressDAO = NewAddressDAO():
+    private static final AddressDAO addressDAO = new AddressDAO();
 
     private JTextArea outputArea;
     private JPanel loginPanel;
