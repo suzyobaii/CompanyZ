@@ -8,7 +8,7 @@ public class EMSTestConnection {
     public static void main(String[] args) {
         String url = "jdbc:mysql://localhost:3306/employeeData?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC";
         String user = "root"; 
-        String password = "Kj.1119789";
+        String password = "password";
 
         try {
             //load MySQL JDBC Driver

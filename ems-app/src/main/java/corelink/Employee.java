@@ -1,18 +1,20 @@
 package corelink;
 
+import java.sql.Date;
 
 public class Employee {
     private int empid;
     private String firstName;
     private String lastName;
     private String ssn;
-    private String dob;
-    private String hireDate;
+    private Date dob;
+    private Date hireDate;
     private double baseSalary;
     private String status;
+    private String phone; 
 
     public Employee(int empid, String firstName, String lastName, String ssn,
-                    String dob, String hireDate, double baseSalary, String status) {
+                    Date dob, Date hireDate, double baseSalary, String status, String phone) {
         this.empid = empid;
         this.firstName = firstName;
         this.lastName = lastName;
@@ -21,27 +23,29 @@ public class Employee {
         this.hireDate = hireDate;
         this.baseSalary = baseSalary;
         this.status = status;
+        this.phone = phone;
     }
 
-    public int getEmpid() {
-        return empid;
-    }
+    // getters
+    public int getEmpid() { return empid; }
+    public String getFirstName() { return firstName; }
+    public String getLastName() { return lastName; }
+    public double getBaseSalary() { return baseSalary; }
+    public String getStatus() { return status; }
+    public Date getDob() { return dob; }
+    public Date getHireDate() { return hireDate; }
+    public String getPhone() { return phone; }
 
-    public String getFirstName() {
-        return firstName;
-    }
+    // setters
+    public void setEmpid(int empid) { this.empid = empid; }
+    public void setFirstName(String firstName) { this.firstName = firstName; }
+    public void setLastName(String lastName) { this.lastName = lastName; }
+    public void setSSN(String ssn) { this.ssn = ssn; }
+    public void setDOB(Date dob) { this.dob = dob; }
+    public void setHireDate(Date hireDate) { this.hireDate = hireDate; }
+    public void setBaseSalary(double baseSalary) { this.baseSalary = baseSalary; }
 
-    public String getLastName() {
-        return lastName;
-    }
-
-    public double getBaseSalary() {
-        return baseSalary;
-    }
-
-    public String getStatus() {
-        return status;
-    }
+    public void setPhone(String phone) { this.phone = phone; }
 
     @Override
     public String toString() {
@@ -51,6 +55,7 @@ public class Employee {
                 ", lastName='" + lastName + '\'' +
                 ", baseSalary=" + baseSalary +
                 ", status='" + status + '\'' +
+                ", phone='" + phone + '\'' +
                 '}';
     }
 }

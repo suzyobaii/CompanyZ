@@ -11,7 +11,7 @@ import java.util.List;
 
 public class AddressDAO {
 
-    // Add a new address for an employee
+    //add a new address for an employee
     public boolean addAddress(int empid, String street, int cityId, int stateId, String zip,
                               String gender, String identifiedRace, Date dob, String mobilePhone) {
         String sql = "INSERT INTO address " +
@@ -40,7 +40,7 @@ public class AddressDAO {
         }
     }
 
-    // Update an employee's address or demographic info
+    //update an employee's address/demographic info
     public boolean updateAddress(int empid, String street, int cityId, int stateId, String zip,
                                  String gender, String identifiedRace, Date dob, String mobilePhone) {
         String sql = "UPDATE address SET street = ?, city_id = ?, state_id = ?, zip = ?, " +
@@ -68,7 +68,7 @@ public class AddressDAO {
         }
     }
 
-    // Get a single employee's address info
+    //get a single employee's address info
     public Address getAddressByEmpId(int empid) {
         String sql = "SELECT a.empid, a.street, a.city_id, c.name AS city_name, " +
                      "a.state_id, s.name AS state_name, a.zip, a.gender, a.identified_race, a.dob, a.mobile_phone " +
@@ -106,7 +106,7 @@ public class AddressDAO {
         return null;
     }
 
-    // Get all addresses (for admin reporting)
+    //get all addresses ~ for admin reporting
     public List<Address> getAllAddresses() {
         List<Address> addresses = new ArrayList<>();
         String sql = "SELECT a.empid, a.street, a.city_id, c.name AS city_name, " +

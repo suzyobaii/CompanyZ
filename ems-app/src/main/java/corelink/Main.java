@@ -15,8 +15,6 @@ public class Main {
     private static final Reports reports = new Reports();
     private static AddressDAO addressDAO = new AddressDAO();
 
-
-
     public static void main(String[] args) {
 
         //very basic test of DB connection
@@ -150,21 +148,17 @@ public class Main {
     private static void hrAddressMenu() {
         while (true) {
             System.out.println("=== HR Address Menu ===");
-            System.out.println("1. Add Employee Address");
-            System.out.println("2. Update Employee Address");
-            System.out.println("3. View Employee Address");
+            System.out.println("1. Update Employee Address");
+            System.out.println("2. View Employee Address");
             System.out.println("0. Back");
             System.out.print("Choice: ");
             String choice = scanner.nextLine();
 
             switch (choice) {
                 case "1":
-                    addEmployeeAddress();
-                    break;
-                case "2":
                     updateEmployeeAddress();
                     break;
-                case "3":
+                case "2":
                     viewEmployeeAddress();
                     break;
                 case "0":
@@ -174,37 +168,7 @@ public class Main {
             }
         }
     }
-
-    // Add Employee Address 
-    private static void addEmployeeAddress() {
-        try {
-            System.out.print("EmpID: ");
-            int empid = Integer.parseInt(scanner.nextLine());
-            System.out.print("Street: ");
-            String street = scanner.nextLine();
-            System.out.print("City ID: ");
-            int cityId = Integer.parseInt(scanner.nextLine());
-            System.out.print("State ID: ");
-            int stateId = Integer.parseInt(scanner.nextLine());
-            System.out.print("Zip: ");
-            String zip = scanner.nextLine();
-            System.out.print("Gender: ");
-            String gender = scanner.nextLine();
-            System.out.print("Race: ");
-            String race = scanner.nextLine();
-            System.out.print("DOB (YYYY-MM-DD): ");
-            Date dob = Date.valueOf(scanner.nextLine());
-            System.out.print("Mobile phone: ");
-            String phone = scanner.nextLine();
-
-            boolean success = addressDAO.addAddress(empid, street, cityId, stateId, zip, gender, race, dob, phone);
-            System.out.println(success ? "Address added successfully.\n" : "Failed to add address.\n");
-
-        } catch (Exception ex) {
-            System.out.println("Error adding address: " + ex.getMessage() + "\n");
-        }
-    }
-
+    
     // Update Employee Address 
     private static void updateEmployeeAddress() {
         try {
@@ -328,13 +292,29 @@ public class Main {
             System.out.print("Base Salary: ");
             double salary = Double.parseDouble(scanner.nextLine());
 
+            //additional fields
+            System.out.print("Street: ");
+            String street = scanner.nextLine();
+            System.out.print("City ID: ");
+            int cityId = Integer.parseInt(scanner.nextLine());
+            System.out.print("State ID: ");
+            int stateId = Integer.parseInt(scanner.nextLine());
+            System.out.print("Zip: ");
+            String zip = scanner.nextLine();
+            System.out.print("Gender: ");
+            String gender = scanner.nextLine();
+            System.out.print("Identified Race: ");
+            String identifiedRace = scanner.nextLine();
+            System.out.print("Phone: ");
+            String phone = scanner.nextLine();
+
             int newEmpid = employeeDAO.addEmployee(
-                    fn,
-                    ln,
-                    ssn,
+                    fn, ln, ssn,
                     Date.valueOf(dobStr),
                     Date.valueOf(hireStr),
-                    salary
+                    salary,
+                    street, cityId, stateId, zip,
+                    gender, identifiedRace, phone
             );
 
             if (newEmpid > 0) {

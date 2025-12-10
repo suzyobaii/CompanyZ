@@ -7,7 +7,7 @@ import java.sql.SQLException;
 
 public class PayrollDAO {
 
-    // Pay history for one employee, newest first
+    //pay history for one employee, newest first
     public void printPayHistory(int empid) {
         String sql = "SELECT pay_date, gross_pay, net_pay " +
                      "FROM payroll " +
@@ -33,7 +33,7 @@ public class PayrollDAO {
         }
     }
 
-    // Total pay for month by job title
+    //total pay for month by job title
     public void printTotalPayByJobTitle(String monthYear) {
         String sql = "SELECT jt.job_title AS title_name, SUM(p.gross_pay) AS total_gross " +
                      "FROM payroll p " +
@@ -60,7 +60,7 @@ public class PayrollDAO {
         }
     }
 
-    // Total pay for month by division
+    //total pay for month by division
     public void printTotalPayByDivision(String monthYear) {
         String sql = "SELECT d.division_name, SUM(p.gross_pay) AS total_gross " +
                      "FROM payroll p " +

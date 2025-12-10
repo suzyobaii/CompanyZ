@@ -7,13 +7,13 @@ public class Address {
     private int empid;
     private String street;
     private int cityId;
-    private String cityName;       // optional, for reporting
+    private String cityName;      
     private int stateId;
-    private String stateName;      // optional, for reporting
+    private String stateName;     
     private String zip;
     private String gender;
     private String identifiedRace;
-    private Date dob;              // use java.sql.Date for DB compatibility
+    private Date dob;              // use java.sql.Date for db compatibility
     private String mobilePhone;
 
     // Full constructor
@@ -30,10 +30,10 @@ public class Address {
         this.mobilePhone = mobilePhone;
     }
 
-    // Empty constructor for DAO retrieval
+    //empty constructor for DAO retrieval
     public Address() {}
 
-    // ----- Getters and Setters -----
+    // ----- getters & setters -----
     public int getEmpid() { return empid; }
     public void setEmpid(int empid) { this.empid = empid; }
 

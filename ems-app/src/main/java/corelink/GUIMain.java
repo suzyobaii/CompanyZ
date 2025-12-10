@@ -5,7 +5,6 @@ import java.awt.FlowLayout;
 import java.awt.Font;
 import java.awt.GridLayout;
 import java.sql.Date;
-import java.time.LocalDate;
 import java.util.List;
 
 import javax.swing.JButton;
@@ -23,9 +22,10 @@ import javax.swing.SwingUtilities;
 
 public class GUIMain extends JFrame {
 
-    private static final EmployeeDAO employeeDAO = new EmployeeDAO();
-    private static final PayrollDAO payrollDAO = new PayrollDAO();
-    private static final Reports reports = new Reports();
+    private static final EmployeeService employeeService = new EmployeeService();
+    private static final PayrollService payrollService = new PayrollService();
+    private static final ReportsService reportsService = new ReportsService();
+    private static final AddressDAO addressDAO = new AddressDAO();
 
     private JTextArea outputArea;
     private JPanel loginPanel;
@@ -131,7 +131,7 @@ public class GUIMain extends JFrame {
             try {
                 int empid = Integer.parseInt(empIdField.getText());
                 String lastName = lastNameField.getText();
-                List<Employee> list = employeeDAO.searchEmployees(null, lastName, null, empid);
+                List<Employee> list = employeeService.searchEmployees(null, lastName, null, empid);
                 if (!list.isEmpty()) {
                     dialog.dispose();
                     showEmployeePanel(empid);
@@ -187,7 +187,7 @@ public class GUIMain extends JFrame {
         viewDataBtn.addActionListener(e -> viewMyData(empid));
         payHistoryBtn.addActionListener(e -> {
             outputArea.setText("");
-            payrollDAO.printPayHistory(empid);
+            payrollService.printPayHistory(empid);
         });
         logoutBtn.addActionListener(e -> logout());
 
@@ -241,7 +241,7 @@ public class GUIMain extends JFrame {
             String ln = lnField.getText().isEmpty() ? null : lnField.getText();
             String ssn = ssnField.getText().isEmpty() ? null : ssnField.getText();
             Integer empid = empIdField.getText().isEmpty() ? null : Integer.parseInt(empIdField.getText());
-            List<Employee> results = employeeDAO.searchEmployees(fn, ln, ssn, empid);
+            List<Employee> results = employeeService.searchEmployees(fn, ln, ssn, empid);
             outputArea.setText("");
             if (results.isEmpty()) {
                 outputArea.append("No employees found.\n");
@@ -257,13 +257,20 @@ public class GUIMain extends JFrame {
     }
 
     private void hrAddEmployee() {
-        JPanel form = new JPanel(new GridLayout(7, 2));
+        JPanel form = new JPanel(new GridLayout(14, 2));
         JTextField fnField = new JTextField();
         JTextField lnField = new JTextField();
         JTextField ssnField = new JTextField();
         JTextField dobField = new JTextField();
         JTextField hireField = new JTextField();
         JTextField salaryField = new JTextField();
+        JTextField streetField = new JTextField();
+        JTextField cityField = new JTextField();
+        JTextField stateField = new JTextField();
+        JTextField zipField = new JTextField();
+        JTextField genderField = new JTextField();
+        JTextField raceField = new JTextField();
+        JTextField phoneField = new JTextField();
         JButton addBtn = new JButton("Add");
 
         form.add(new JLabel("First Name:"));
@@ -278,6 +285,20 @@ public class GUIMain extends JFrame {
         form.add(hireField);
         form.add(new JLabel("Base Salary:"));
         form.add(salaryField);
+        form.add(new JLabel("Street:"));
+        form.add(streetField);
+        form.add(new JLabel("City ID (1 to 20):"));
+        form.add(cityField);
+        form.add(new JLabel("State ID (1 to 50):"));
+        form.add(stateField);
+        form.add(new JLabel("Zip Code:"));
+        form.add(zipField);
+        form.add(new JLabel("Gender:"));
+        form.add(genderField);
+        form.add(new JLabel("Race:"));
+        form.add(raceField);
+        form.add(new JLabel("Phone Number:"));
+        form.add(phoneField);
         form.add(addBtn);
 
         JDialog dialog = new JDialog(this, "Add Employee", true);
@@ -287,13 +308,20 @@ public class GUIMain extends JFrame {
 
         addBtn.addActionListener(e -> {
             try {
-                int newEmpid = employeeDAO.addEmployee(
+                int newEmpid = employeeService.addEmployee(
                         fnField.getText(),
                         lnField.getText(),
                         ssnField.getText(),
                         Date.valueOf(dobField.getText()),
                         Date.valueOf(hireField.getText()),
-                        Double.parseDouble(salaryField.getText())
+                        Double.parseDouble(salaryField.getText()),
+                        streetField.getText(),
+                        Integer.valueOf(cityField.getText()),
+                        Integer.valueOf(stateField.getText()),
+                        zipField.getText(),
+                        genderField.getText(),
+                        raceField.getText(),
+                        phoneField.getText()
                 );
                 if (newEmpid > 0) {
                     outputArea.append("New employee created with empid = " + newEmpid + "\n");
@@ -331,7 +359,7 @@ public class GUIMain extends JFrame {
 
         updateBtn.addActionListener(e -> {
             try {
-                employeeDAO.updateEmployeeBasic(
+                employeeService.updateEmployeeBasic(
                         Integer.parseInt(empIdField.getText()),
                         lnField.getText(),
                         Double.parseDouble(salaryField.getText())
@@ -368,7 +396,7 @@ public class GUIMain extends JFrame {
 
         increaseBtn.addActionListener(e -> {
             try {
-                employeeDAO.increaseSalaryByRange(
+                employeeService.increaseSalaryByRange(
                         Double.parseDouble(percentField.getText()),
                         Double.parseDouble(minField.getText()),
                         Double.parseDouble(maxField.getText())
@@ -383,6 +411,122 @@ public class GUIMain extends JFrame {
         dialog.setVisible(true);
     }
 
+    //Will add back updateEmployeeAddress but I just want to run without errors first
+    private void hrAddressMenu() {
+        JPanel panel = new JPanel(new GridLayout(3, 1));
+        JButton addBtn = new JButton("Add Address");
+        JButton updateBtn = new JButton("Update Address");
+        JButton viewBtn = new JButton("View Address");
+        JButton backBtn = new JButton("Back");
+
+        addBtn.addActionListener(e -> addEmployeeAddress());
+        viewBtn.addActionListener(e -> viewEmployeeAddress());
+        backBtn.addActionListener(e -> {
+        }); // Placeholder, as it's modal
+
+        panel.add(addBtn);
+        panel.add(viewBtn);
+        panel.add(backBtn);
+
+        JDialog dialog = new JDialog(this, "Address Menu", true);
+        dialog.setContentPane(panel);
+        dialog.pack();
+        dialog.setLocationRelativeTo(this);
+        dialog.setVisible(true);
+    }
+
+    private void addEmployeeAddress() {
+        JPanel form = new JPanel(new GridLayout(10, 2));
+        JTextField empIdField = new JTextField();
+        JTextField streetField = new JTextField();
+        JTextField cityIdField = new JTextField();
+        JTextField stateIdField = new JTextField();
+        JTextField zipField = new JTextField();
+        JTextField genderField = new JTextField();
+        JTextField raceField = new JTextField();
+        JTextField dobField = new JTextField();
+        JTextField phoneField = new JTextField();
+        JButton addBtn = new JButton("Add");
+
+        form.add(new JLabel("EmpID:"));
+        form.add(empIdField);
+        form.add(new JLabel("Street:"));
+        form.add(streetField);
+        form.add(new JLabel("City ID:"));
+        form.add(cityIdField);
+        form.add(new JLabel("State ID:"));
+        form.add(stateIdField);
+        form.add(new JLabel("Zip:"));
+        form.add(zipField);
+        form.add(new JLabel("Gender:"));
+        form.add(genderField);
+        form.add(new JLabel("Race:"));
+        form.add(raceField);
+        form.add(new JLabel("DOB (YYYY-MM-DD):"));
+        form.add(dobField);
+        form.add(new JLabel("Phone:"));
+        form.add(phoneField);
+        form.add(addBtn);
+
+        JDialog dialog = new JDialog(this, "Add Address", true);
+        dialog.setContentPane(form);
+        dialog.pack();
+        dialog.setLocationRelativeTo(this);
+
+        addBtn.addActionListener(e -> {
+            try {
+                boolean success = addressDAO.addAddress(
+                        Integer.parseInt(empIdField.getText()),
+                        streetField.getText(),
+                        Integer.parseInt(cityIdField.getText()),
+                        Integer.parseInt(stateIdField.getText()),
+                        zipField.getText(),
+                        genderField.getText(),
+                        raceField.getText(),
+                        Date.valueOf(dobField.getText()),
+                        phoneField.getText()
+                );
+                outputArea.append(success ? "Address added.\n" : "Failed to add address.\n");
+                dialog.dispose();
+            } catch (Exception ex) {
+                JOptionPane.showMessageDialog(dialog, "Error: " + ex.getMessage());
+            }
+        });
+
+        dialog.setVisible(true);
+    }
+    
+ private void viewEmployeeAddress() {
+        JPanel form = new JPanel(new GridLayout(2, 2));
+        JTextField empIdField = new JTextField();
+        JButton viewBtn = new JButton("View");
+
+        form.add(new JLabel("EmpID:"));
+        form.add(empIdField);
+        form.add(viewBtn);
+
+        JDialog dialog = new JDialog(this, "View Address", true);
+        dialog.setContentPane(form);
+        dialog.pack();
+        dialog.setLocationRelativeTo(this);
+
+        viewBtn.addActionListener(e -> {
+            try {
+                Address addr = addressDAO.getAddressByEmpId(Integer.parseInt(empIdField.getText()));
+                if (addr != null) {
+                    outputArea.setText(addr.toString());
+                } else {
+                    outputArea.setText("Address not found.\n");
+                }
+                dialog.dispose();
+            } catch (Exception ex) {
+                JOptionPane.showMessageDialog(dialog, "Error: " + ex.getMessage());
+            }
+        });
+
+        dialog.setVisible(true);
+    }
+    
     private void hrReportsMenu() {
         JPanel panel = new JPanel(new GridLayout(4, 1));
         JButton report1Btn = new JButton("Total Pay by Job Title");
@@ -393,20 +537,20 @@ public class GUIMain extends JFrame {
         report1Btn.addActionListener(e -> {
             String month = JOptionPane.showInputDialog("Enter month (YYYY-MM):");
             if (month != null) {
-                payrollDAO.printTotalPayByJobTitle(month);
+                payrollService.printTotalPayByJobTitle(month);
             }
         });
         report2Btn.addActionListener(e -> {
             String month = JOptionPane.showInputDialog("Enter month (YYYY-MM):");
             if (month != null) {
-                payrollDAO.printTotalPayByDivision(month);
+                payrollService.printTotalPayByDivision(month);
             }
         });
         report3Btn.addActionListener(e -> {
             String start = JOptionPane.showInputDialog("Start date (YYYY-MM-DD):");
             String end = JOptionPane.showInputDialog("End date (YYYY-MM-DD):");
             if (start != null && end != null) {
-                reports.printEmployeesHiredBetween(LocalDate.parse(start), LocalDate.parse(end));
+                reportsService.listEmployeesByHireDate(start, end);
             }
         });
         backBtn.addActionListener(e -> {
@@ -426,7 +570,7 @@ public class GUIMain extends JFrame {
     }
 
     private void viewMyData(int empid) {
-        List<Employee> list = employeeDAO.searchEmployees(null, null, null, empid);
+        List<Employee> list = employeeService.searchEmployees(null, null, null, empid);
         outputArea.setText("");
         if (list.isEmpty()) {
             outputArea.append("No data found.\n");

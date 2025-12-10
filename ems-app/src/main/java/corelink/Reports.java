@@ -9,7 +9,7 @@ import java.time.LocalDate;
 
 public class Reports {
 
-    // Print employees hired between two dates
+    //print employees hired between two dates
     public void printEmployeesHiredBetween(LocalDate start, LocalDate end) {
         String sql = "SELECT empid, first_name, last_name, hire_date " +
                      "FROM employees " +
