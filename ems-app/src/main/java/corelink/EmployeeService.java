@@ -10,11 +10,6 @@ public class EmployeeService {
         this.employeeDAO = new EmployeeDAO();
     }
 
-    //login 
-    public boolean login(String username, String password, String role) {
-        return employeeDAO.authenticate(username, password, role);
-    }
-
     //search employees 
     public List<Employee> searchEmployees(String firstName, String lastName, String ssn, Integer empId) {
         return employeeDAO.searchEmployees(firstName, lastName, ssn, empId);
@@ -50,27 +45,7 @@ public class EmployeeService {
     }
 
     //view employee by ID 
-    public void viewEmployeeById(int empId) {
-        employeeDAO.printEmployeeById(empId);
-    }
-
-    //view Pay History 
-    public void viewPayHistory(int empId) {
-        employeeDAO.getPayHistory(empId);
-    }
-
-    //generate monthly report by job title 
-    public void generateMonthlyReportByJobTitle(String monthYear) {
-        employeeDAO.getMonthlyTotalsByJobTitle(monthYear);
-    }
-
-    //generate monthly report by division 
-    public void generateMonthlyReportByDivision(String monthYear) {
-        employeeDAO.getMonthlyTotalsByDivision(monthYear);
-    }
-
-    //search employees by hire date 
-    public void searchEmployeesByHireDate(String startDate, String endDate) {
-        employeeDAO.searchEmployeesByHireDate(startDate, endDate);
+    public Employee getEmployeeById(int empId) {
+        return employeeDAO.getEmployeeById(empId);
     }
 }

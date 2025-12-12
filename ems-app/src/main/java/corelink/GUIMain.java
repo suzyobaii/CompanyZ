@@ -1,6 +1,7 @@
 package corelink;
 
 import java.awt.BorderLayout;
+import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Font;
 import java.awt.GridLayout;
@@ -23,12 +24,12 @@ import javax.swing.SwingUtilities;
 public class GUIMain extends JFrame {
 
     private static final EmployeeService employeeService = new EmployeeService();
-    private static final PayrollService payrollService = new PayrollService();
-    private static final ReportsService reportsService = new ReportsService();
-    private static final AddressDAO addressDAO = new AddressDAO();
+    private static final AddressService addressService = new AddressService();
+    private static final ReportService reportService = new ReportService();
+    private static final UserAuthService validation = new UserAuthService();
 
-    private JTextArea outputArea;
-    private JPanel loginPanel;
+    private final JTextArea outputArea;
+    private final JPanel loginPanel;
     private JPanel hrPanel;
     private JPanel employeePanel;
 
@@ -47,6 +48,7 @@ public class GUIMain extends JFrame {
         outputArea = new JTextArea();
         outputArea.setEditable(false);
         JScrollPane scrollPane = new JScrollPane(outputArea);
+        scrollPane.setPreferredSize(new Dimension(300, 400));
         add(scrollPane, BorderLayout.SOUTH);
 
         // --- LOGIN PANEL BELOW TITLE ---
@@ -95,7 +97,8 @@ public class GUIMain extends JFrame {
         dialog.setLocationRelativeTo(this);
 
         loginBtn.addActionListener(e -> {
-            if ("admin".equals(userField.getText()) && "admin123".equals(new String(passField.getPassword()))) {
+
+            if (validation.hrLogin(userField.getText(), String.valueOf(passField.getPassword()))) {
                 dialog.dispose();
                 showHRPanel();
             } else {
@@ -111,14 +114,14 @@ public class GUIMain extends JFrame {
     private void employeeLogin() {
         JPanel loginForm = new JPanel(new GridLayout(3, 2));
         JTextField empIdField = new JTextField();
-        JTextField lastNameField = new JTextField();
+        JPasswordField ssnField = new JPasswordField();
         JButton loginBtn = new JButton("Login");
         JButton cancelBtn = new JButton("Cancel");
 
         loginForm.add(new JLabel("Employee ID:"));
         loginForm.add(empIdField);
-        loginForm.add(new JLabel("Last Name:"));
-        loginForm.add(lastNameField);
+        loginForm.add(new JLabel("SSN (No dashes -):"));
+        loginForm.add(ssnField);
         loginForm.add(loginBtn);
         loginForm.add(cancelBtn);
 
@@ -130,9 +133,8 @@ public class GUIMain extends JFrame {
         loginBtn.addActionListener(e -> {
             try {
                 int empid = Integer.parseInt(empIdField.getText());
-                String lastName = lastNameField.getText();
-                List<Employee> list = employeeService.searchEmployees(null, lastName, null, empid);
-                if (!list.isEmpty()) {
+                String ssn = String.valueOf(ssnField.getPassword());
+                if (validation.employeeLogin(empid, ssn)) {
                     dialog.dispose();
                     showEmployeePanel(empid);
                 } else {
@@ -187,7 +189,7 @@ public class GUIMain extends JFrame {
         viewDataBtn.addActionListener(e -> viewMyData(empid));
         payHistoryBtn.addActionListener(e -> {
             outputArea.setText("");
-            payrollService.printPayHistory(empid);
+            outputArea.append(reportService.getPayHistory(empid) + "\n");
         });
         logoutBtn.addActionListener(e -> logout());
 
@@ -277,7 +279,7 @@ public class GUIMain extends JFrame {
         form.add(fnField);
         form.add(new JLabel("Last Name:"));
         form.add(lnField);
-        form.add(new JLabel("SSN:"));
+        form.add(new JLabel("SSN (No dashes -):"));
         form.add(ssnField);
         form.add(new JLabel("DOB (YYYY-MM-DD):"));
         form.add(dobField);
@@ -411,7 +413,6 @@ public class GUIMain extends JFrame {
         dialog.setVisible(true);
     }
 
-    //Will add back updateEmployeeAddress but I just want to run without errors first
     private void hrAddressMenu() {
         JPanel panel = new JPanel(new GridLayout(3, 1));
         JButton addBtn = new JButton("Add Address");
@@ -475,7 +476,7 @@ public class GUIMain extends JFrame {
 
         addBtn.addActionListener(e -> {
             try {
-                boolean success = addressDAO.addAddress(
+                boolean success = addressService.addAddress(
                         Integer.parseInt(empIdField.getText()),
                         streetField.getText(),
                         Integer.parseInt(cityIdField.getText()),
@@ -512,7 +513,7 @@ public class GUIMain extends JFrame {
 
         viewBtn.addActionListener(e -> {
             try {
-                Address addr = addressDAO.getAddressByEmpId(Integer.parseInt(empIdField.getText()));
+                Address addr = addressService.getAddressByEmpId(Integer.parseInt(empIdField.getText()));
                 if (addr != null) {
                     outputArea.setText(addr.toString());
                 } else {
@@ -537,20 +538,20 @@ public class GUIMain extends JFrame {
         report1Btn.addActionListener(e -> {
             String month = JOptionPane.showInputDialog("Enter month (YYYY-MM):");
             if (month != null) {
-                payrollService.printTotalPayByJobTitle(month);
+                outputArea.append(reportService.getMonthlyTotalByJobTitle(month) + "\n");
             }
         });
         report2Btn.addActionListener(e -> {
             String month = JOptionPane.showInputDialog("Enter month (YYYY-MM):");
             if (month != null) {
-                payrollService.printTotalPayByDivision(month);
+                outputArea.append(reportService.getMonthlyTotalByDivision(month) + "\n");
             }
         });
         report3Btn.addActionListener(e -> {
             String start = JOptionPane.showInputDialog("Start date (YYYY-MM-DD):");
             String end = JOptionPane.showInputDialog("End date (YYYY-MM-DD):");
             if (start != null && end != null) {
-                reportsService.listEmployeesByHireDate(start, end);
+                outputArea.append(reportService.getEmployeesHiredBetween(start, end) + "\n");
             }
         });
         backBtn.addActionListener(e -> {

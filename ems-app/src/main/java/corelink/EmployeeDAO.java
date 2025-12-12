@@ -10,25 +10,19 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class EmployeeDAO {
-
-    //authentication 
-    public boolean authenticate(String username, String password, String role) {
-        return (username.equals("hr_admin") && password.equals("password123") && role.equals("HR")) ||
-               (username.equals("emp_user") && password.equals("password123") && role.equals("EMP"));
-    }
+    private final AddressService addressService = new AddressService();
 
     //search employees
     public List<Employee> searchEmployees(String firstName, String lastName, String ssn, Integer empId) {
         List<Employee> results = new ArrayList<>();
         StringBuilder sql = new StringBuilder(
-            "SELECT e.empid, e.first_name, e.last_name, e.ssn, e.dob, e.hire_date, e.base_salary, e.status, a.phone " +
-            "FROM employees e LEFT JOIN address a ON e.empid = a.empid WHERE 1=1 "
+            "SELECT * FROM employees WHERE 1=1 "
         );
 
-        if (firstName != null && !firstName.isEmpty()) sql.append("AND e.first_name LIKE ? ");
-        if (lastName != null && !lastName.isEmpty()) sql.append("AND e.last_name LIKE ? ");
-        if (ssn != null && !ssn.isEmpty()) sql.append("AND e.ssn = ? ");
-        if (empId != null) sql.append("AND e.empid = ? ");
+        if (firstName != null && !firstName.isEmpty()) sql.append("AND first_name LIKE ? ");
+        if (lastName != null && !lastName.isEmpty()) sql.append("AND last_name LIKE ? ");
+        if (ssn != null && !ssn.isEmpty()) sql.append("AND ssn = ? ");
+        if (empId != null) sql.append("AND empid = ? ");
 
         try (Connection conn = Database.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql.toString())) {
@@ -41,22 +35,20 @@ public class EmployeeDAO {
 
             ResultSet rs = ps.executeQuery();
             while (rs.next()) {
-                Employee e = new Employee(
-                    rs.getInt("empid"),
-                    rs.getString("first_name"),
-                    rs.getString("last_name"),
-                    rs.getString("ssn"),
-                    rs.getDate("dob"),
-                    rs.getDate("hire_date"),
-                    rs.getDouble("base_salary"),
-                    rs.getString("status"),
-                    rs.getString("phone")
-                );
+                Employee e = new Employee();
+                    e.setEmpid(rs.getInt("empid"));
+                    e.setFirstName(rs.getString("first_name"));
+                    e.setLastName(rs.getString("last_name"));
+                    e.setSSN(rs.getString("ssn"));
+                    e.setDOB(rs.getDate("dob"));
+                    e.setHireDate(rs.getDate("hire_date"));
+                    e.setBaseSalary(rs.getDouble("base_salary"));
+                    e.setStatus(rs.getString("status"));
                 results.add(e);
             }
 
         } catch (SQLException ex) {
-            System.out.println("Error in searchEmployees: " + ex.getMessage());
+            throw new RuntimeException("Error in searchEmployees: " + ex.getMessage());
         }
         return results;
     }
@@ -70,7 +62,6 @@ public class EmployeeDAO {
         int empId = -1;
         List<Employee> duplicates = searchEmployees(null, null, ssn, null);
         if (!duplicates.isEmpty()) {
-            System.out.println("Employee with this SSN already exists.");
             return -1;
         }
 
@@ -93,28 +84,17 @@ public class EmployeeDAO {
                 if (keys.next()) empId = keys.getInt(1);
             }
 
-            String sqlAddr = "INSERT INTO address (empid, street, city_id, state_id, zip, gender, identified_race, phone) " +
-                             "VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
-            try (PreparedStatement psAddr = conn.prepareStatement(sqlAddr)) {
-                psAddr.setInt(1, empId);
-                psAddr.setString(2, street);
-                psAddr.setInt(3, cityId);
-                psAddr.setInt(4, stateId);
-                psAddr.setString(5, zip);
-                psAddr.setString(6, gender);
-                psAddr.setString(7, identifiedRace);
-                psAddr.setString(8, phone);
-                psAddr.executeUpdate();
-            }
-
         } catch (SQLException ex) {
-            System.out.println("Error in addEmployee: " + ex.getMessage());
+            throw new RuntimeException("Error in addEmployee: " + ex.getMessage());
         }
+
+        // Add address
+        addressService.addAddress(empId, street, cityId, stateId, zip, gender, identifiedRace, dob, phone);
 
         return empId;
     }
 
-    //update Employee basicccc
+    //update Employee basic
     public void updateEmployeeBasic(int empId, String newLastName, double newSalary) {
         String sql = "UPDATE employees SET last_name = ?, base_salary = ? WHERE empid = ?";
         try (Connection conn = Database.getConnection();
@@ -124,7 +104,7 @@ public class EmployeeDAO {
             ps.setInt(3, empId);
             ps.executeUpdate();
         } catch (SQLException ex) {
-            System.out.println("Error in updateEmployeeBasic: " + ex.getMessage());
+            throw new RuntimeException("Error in updateEmployeeBasic: " + ex.getMessage());
         }
     }
 
@@ -137,7 +117,7 @@ public class EmployeeDAO {
             ps.setInt(2, empId);
             ps.executeUpdate();
         } catch (SQLException ex) {
-            System.out.println("Error in updatePhone: " + ex.getMessage());
+            throw new RuntimeException("Error in updatePhone: " + ex.getMessage());
         }
     }
 
@@ -151,7 +131,7 @@ public class EmployeeDAO {
             ps.setDouble(3, maxSalary);
             ps.executeUpdate();
         } catch (SQLException ex) {
-            System.out.println("Error in increaseSalaryByRange: " + ex.getMessage());
+            throw new RuntimeException("Error in increaseSalaryByRange: " + ex.getMessage());
         }
     }
 
@@ -163,122 +143,36 @@ public class EmployeeDAO {
             ps.setInt(1, empId);
             ps.executeUpdate();
         } catch (SQLException ex) {
-            System.out.println("Error in deleteEmployee: " + ex.getMessage());
+            throw new RuntimeException("Error in deleteEmployee: " + ex.getMessage());
         }
     }
 
     // print employee by ID
-    public void printEmployeeById(int empId) {
-        String sql = "SELECT e.*, a.phone FROM employees e LEFT JOIN address a ON e.empid = a.empid WHERE e.empid = ?";
+    public Employee getEmployeeById(int empId) {
+        String sql = "SELECT * FROM employees WHERE empid = ?";
         try (Connection conn = Database.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
+            PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, empId);
             ResultSet rs = ps.executeQuery();
+
             if (rs.next()) {
-                System.out.println("Employee: " + rs.getInt("empid") + ", " +
-                                   rs.getString("first_name") + " " + rs.getString("last_name") +
-                                   ", SSN: " + rs.getString("ssn") +
-                                   ", Phone: " + rs.getString("phone"));
+                Employee e = new Employee();
+                e.setEmpid(rs.getInt("empid"));
+                e.setFirstName(rs.getString("first_name"));
+                e.setLastName(rs.getString("last_name"));
+                e.setSSN(rs.getString("ssn"));
+                e.setDOB(rs.getDate("dob"));
+                e.setHireDate(rs.getDate("hire_date"));
+                e.setBaseSalary(rs.getDouble("base_salary"));
+                e.setStatus(rs.getString("status"));
+                
+                return e;
+            }
+            else {
+                return null;
             }
         } catch (SQLException ex) {
-            System.out.println("Error in printEmployeeById: " + ex.getMessage());
-        }
-    }
-
-    //Pay Reports / history
-    public void getPayHistory(int empId) {
-        String sql = "SELECT * FROM payroll WHERE empid = ? ORDER BY pay_date DESC";
-        try (Connection conn = Database.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setInt(1, empId);
-            ResultSet rs = ps.executeQuery();
-            System.out.println("Pay History for empid " + empId + ":");
-            while (rs.next()) {
-                System.out.println("Pay Date: " + rs.getDate("pay_date") +
-                                   ", Gross: " + rs.getDouble("gross_pay") +
-                                   ", Net: " + rs.getDouble("net_pay"));
-            }
-        } catch (SQLException ex) {
-            System.out.println("Error in getPayHistory: " + ex.getMessage());
-        }
-    }
-
-    // monthly pay by job title
-   public void getMonthlyTotalsByJobTitle(String monthYear) {
-        // monthYear example: "2025-12"
-        String startDate = monthYear + "-01";
-        String endDate = monthYear + "-31";
-
-        String sql = "SELECT jt.title_name, SUM(ps.gross_pay) AS total_pay " +
-                    "FROM payroll ps " +
-                    "JOIN employees e ON ps.empid = e.empid " +
-                    "JOIN employee_job_titles ejt ON e.empid = ejt.empid " +
-                    "JOIN job_titles jt ON ejt.job_title_id = jt.job_title_id " +
-                    "WHERE ps.pay_date BETWEEN ? AND ? " +
-                    "GROUP BY jt.title_name";
-
-        try (Connection conn = Database.getConnection();
-            PreparedStatement ps = conn.prepareStatement(sql)) {
-
-            ps.setDate(1, Date.valueOf(startDate));
-            ps.setDate(2, Date.valueOf(endDate));
-
-            ResultSet rs = ps.executeQuery();
-            System.out.println("Monthly Pay by Job Title (" + monthYear + "):");
-            while (rs.next()) {
-                System.out.println(rs.getString("title_name") + ": " + rs.getDouble("total_pay"));
-            }
-
-        } catch (SQLException ex) {
-            System.out.println("Error in getMonthlyTotalsByJobTitle: " + ex.getMessage());
-        }
-    }
-
-    //monthly pay by division
-   public void getMonthlyTotalsByDivision(String monthYear) {
-        String startDate = monthYear + "-01";
-        String endDate = monthYear + "-31";
-
-        String sql = "SELECT d.name, SUM(ps.gross_pay) AS total_pay " +
-                    "FROM payroll ps " +
-                    "JOIN employees e ON ps.empid = e.empid " +
-                    "JOIN employee_division ed ON e.empid = ed.empid " +
-                    "JOIN division d ON ed.div_id = d.id " +
-                    "WHERE ps.pay_date BETWEEN ? AND ? " +
-                    "GROUP BY d.name";
-
-        try (Connection conn = Database.getConnection();
-            PreparedStatement ps = conn.prepareStatement(sql)) {
-
-            ps.setDate(1, Date.valueOf(startDate));
-            ps.setDate(2, Date.valueOf(endDate));
-
-            ResultSet rs = ps.executeQuery();
-            System.out.println("Monthly Pay by Division (" + monthYear + "):");
-            while (rs.next()) {
-                System.out.println(rs.getString("name") + ": " + rs.getDouble("total_pay"));
-            }
-
-        } catch (SQLException ex) {
-            System.out.println("Error in getMonthlyTotalsByDivision: " + ex.getMessage());
-        }
-    }
-    //search by hire date range
-    public void searchEmployeesByHireDate(String startDate, String endDate) {
-        String sql = "SELECT e.empid, e.first_name, e.last_name, e.hire_date " +
-                     "FROM employees e WHERE e.hire_date BETWEEN ? AND ?";
-        try (Connection conn = Database.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setDate(1, Date.valueOf(startDate));
-            ps.setDate(2, Date.valueOf(endDate));
-            ResultSet rs = ps.executeQuery();
-            while (rs.next()) {
-                System.out.println("Employee: " + rs.getInt("empid") + ", " +
-                                   rs.getString("first_name") + " " + rs.getString("last_name") +
-                                   ", Hire Date: " + rs.getDate("hire_date"));
-            }
-        } catch (SQLException ex) {
-            System.out.println("Error in searchEmployeesByHireDate: " + ex.getMessage());
+            throw new RuntimeException("Error in getEmployeeById: " + ex.getMessage());
         }
     }
 }

@@ -12,8 +12,7 @@ import java.util.List;
 public class AddressDAO {
 
     //add a new address for an employee
-    public boolean addAddress(int empid, String street, int cityId, int stateId, String zip,
-                              String gender, String identifiedRace, Date dob, String mobilePhone) {
+    public boolean addAddress(int empid, String street, int cityId, int stateId, String zip, String gender, String identifiedRace, Date dob, String mobilePhone) {
         String sql = "INSERT INTO address " +
                      "(empid, street, city_id, state_id, zip, gender, identified_race, dob, mobile_phone) " +
                      "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
@@ -35,9 +34,8 @@ public class AddressDAO {
             return rows > 0;
 
         } catch (SQLException ex) {
-            System.out.println("Error in addAddress: " + ex.getMessage());
-            return false;
-        }
+            throw new RuntimeException("Error in addAddress: " + ex.getMessage());
+        }        
     }
 
     //update an employee's address/demographic info
@@ -63,8 +61,7 @@ public class AddressDAO {
             return rows > 0;
 
         } catch (SQLException ex) {
-            System.out.println("Error in updateAddress: " + ex.getMessage());
-            return false;
+            throw new RuntimeException("Error in updateAddress: " + ex.getMessage());
         }
     }
 

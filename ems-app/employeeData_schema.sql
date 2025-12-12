@@ -81,43 +81,7 @@ CREATE TABLE address (
     phone VARCHAR(20),
     FOREIGN KEY (empid) REFERENCES employees(empid) ON DELETE CASCADE,
     FOREIGN KEY (city_id) REFERENCES city(city_id),
-    FOREIGN KEY (state_id) REFERENCES state(state_id)
-) ENGINE=InnoDB;
-
--- USER LOGIN / ROLES
-CREATE TABLE roles (
-    role_id INT AUTO_INCREMENT PRIMARY KEY,
-    role_name VARCHAR(50) UNIQUE NOT NULL
-) ENGINE=InnoDB;
-
-CREATE TABLE users (
-    user_id INT AUTO_INCREMENT PRIMARY KEY,
-    empid INT NULL,
-    username VARCHAR(100) UNIQUE NOT NULL,
-    password_hash VARCHAR(255) NOT NULL,
-    is_active BOOLEAN DEFAULT TRUE,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (empid) REFERENCES employees(empid)
-) ENGINE=InnoDB;
-
-CREATE TABLE user_roles (
-    user_id INT NOT NULL,
-    role_id INT NOT NULL,
-    PRIMARY KEY (user_id, role_id),
-    FOREIGN KEY (user_id) REFERENCES users(user_id),
-    FOREIGN KEY (role_id) REFERENCES roles(role_id)
-) ENGINE=InnoDB;
-
--- AUDIT LOG
-CREATE TABLE audit_log (
-    audit_id INT AUTO_INCREMENT PRIMARY KEY,
-    user_id INT,
-    action VARCHAR(50),
-    object_type VARCHAR(50),
-    object_id VARCHAR(100),
-    ts DATETIME DEFAULT CURRENT_TIMESTAMP,
-    detail TEXT,
-    FOREIGN KEY (user_id) REFERENCES users(user_id)
+    FOREIGN KEY (state_id) REFERENCES state(state_id),
 ) ENGINE=InnoDB;
 
 -- INDEXES

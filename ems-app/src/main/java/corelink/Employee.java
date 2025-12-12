@@ -11,30 +11,17 @@ public class Employee {
     private Date hireDate;
     private double baseSalary;
     private String status;
-    private String phone; 
-
-    public Employee(int empid, String firstName, String lastName, String ssn,
-                    Date dob, Date hireDate, double baseSalary, String status, String phone) {
-        this.empid = empid;
-        this.firstName = firstName;
-        this.lastName = lastName;
-        this.ssn = ssn;
-        this.dob = dob;
-        this.hireDate = hireDate;
-        this.baseSalary = baseSalary;
-        this.status = status;
-        this.phone = phone;
-    }
 
     // getters
     public int getEmpid() { return empid; }
     public String getFirstName() { return firstName; }
     public String getLastName() { return lastName; }
-    public double getBaseSalary() { return baseSalary; }
-    public String getStatus() { return status; }
+    public String getSSN() { return ssn; }
     public Date getDob() { return dob; }
     public Date getHireDate() { return hireDate; }
-    public String getPhone() { return phone; }
+    public double getBaseSalary() { return baseSalary; }
+    public String getStatus() { return status; }
+
 
     // setters
     public void setEmpid(int empid) { this.empid = empid; }
@@ -44,18 +31,17 @@ public class Employee {
     public void setDOB(Date dob) { this.dob = dob; }
     public void setHireDate(Date hireDate) { this.hireDate = hireDate; }
     public void setBaseSalary(double baseSalary) { this.baseSalary = baseSalary; }
-
-    public void setPhone(String phone) { this.phone = phone; }
+    public void setStatus(String status) { this.status = status; }
 
     @Override
     public String toString() {
-        return "Employee{" +
-                "empid=" + empid +
-                ", firstName='" + firstName + '\'' +
-                ", lastName='" + lastName + '\'' +
-                ", baseSalary=" + baseSalary +
-                ", status='" + status + '\'' +
-                ", phone='" + phone + '\'' +
-                '}';
+        return "Employee Details\n=============================================\n" +
+                "\nEmployee ID: " + empid +
+                "\nFirst Name: " + firstName +
+                "\nLast Name: " + lastName +
+                "\nDate of Birth: " + dob +
+                "\nHire Date: " + hireDate +
+                "\nBase Salary: $" + baseSalary +
+                "\nStatus: " + status;
     }
 }
