@@ -154,15 +154,15 @@ public class GUIMain extends JFrame {
         remove(loginPanel);
         hrPanel = new JPanel(new GridLayout(6, 1));
         JButton searchBtn = new JButton("Search Employee");
-        JButton addBtn = new JButton("Add New Employee");
-        Jbutton addBtn = new JButton("Address Management")
+        JButton addEmpBtn = new JButton("Add New Employee");
+        JButton addressBtn = new JButton("Address Management");
         JButton updateBtn = new JButton("Update Employee Basic Data");
         JButton salaryBtn = new JButton("Increase Salary by % in Range");
         JButton reportsBtn = new JButton("Reports");
         JButton logoutBtn = new JButton("Logout");
 
         searchBtn.addActionListener(e -> hrSearchEmployee());
-        addBtn.addActionListener(e -> hrAddEmployee());
+        addEmpBtn.addActionListener(e -> hrAddEmployee());
         addressBtn.addActionListener( e -> hrAddressMenu());
         updateBtn.addActionListener(e -> hrUpdateEmployeeBasic());
         salaryBtn.addActionListener(e -> hrIncreaseSalary());
@@ -170,8 +170,8 @@ public class GUIMain extends JFrame {
         logoutBtn.addActionListener(e -> logout()); 
 
         hrPanel.add(searchBtn);
-        hrPanel.add(addBtn);
-        hr.Panel.add(addressBtn);
+        hrPanel.add(addEmpBtn);
+        hrPanel.add(addressBtn);
         hrPanel.add(updateBtn);
         hrPanel.add(salaryBtn);
         hrPanel.add(reportsBtn);

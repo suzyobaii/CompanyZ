@@ -63,10 +63,14 @@ public class Address {
     // ----- toString for printing addresses -----
     @Override
     public String toString() {
-        return String.format(
-            "EmpID: %d%nStreet: %s%nCity: %s (ID: %d)%nState: %s (ID: %d)%nZip: %s%nGender: %s%nRace: %s%nDOB: %s%nMobile Phone: %s%n",
-            empid, street, cityName != null ? cityName : "N/A", cityId,
-            stateName != null ? stateName : "N/A", stateId, zip, gender, identifiedRace, mobilePhone
-        );
+        return "Address Details\n=============================================\n" +
+                "\nEmployee ID: " + empid +
+                "\nStreet: " + street +
+                "\nCity ID: " + cityId +
+                "\nState ID: " + stateId +
+                "\nZip: " + zip +
+                "\nGender: " + gender +
+                "\nRace: " + identifiedRace +
+                "\nMobile Phone: " + mobilePhone;
     }
 }
