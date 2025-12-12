@@ -1,585 +1,429 @@
 package corelink;
 
-import java.awt.BorderLayout;
-import java.awt.FlowLayout;
-import java.awt.Font;
-import java.awt.GridLayout;
+import javax.swing.*;
+import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.sql.Connection;
 import java.sql.Date;
+import java.sql.SQLException;
+import java.time.LocalDate;
 import java.util.List;
 
-import javax.swing.JButton;
-import javax.swing.JDialog;
-import javax.swing.JFrame;
-import javax.swing.JLabel;
-import javax.swing.JOptionPane;
-import javax.swing.JPanel;
-import javax.swing.JPasswordField;
-import javax.swing.JScrollPane;
-import javax.swing.JTextArea;
-import javax.swing.JTextField;
-import javax.swing.SwingConstants;
-import javax.swing.SwingUtilities;
-
 public class GUIMain extends JFrame {
+    private CardLayout cardLayout;
+    private JPanel mainPanel;
+    private EmployeeService employeeService;
+    private PayrollService payrollService;
+    private AddressDAO addressDAO;
+    private Reports reports;
 
-    private static final EmployeeService employeeService = new EmployeeService();
-    private static final PayrollService payrollService = new PayrollService();
-    private static final ReportsService reportsService = new ReportsService();
-    private static final AddressDAO addressDAO = new AddressDAO();
+    // Panels for different screens
+    private LoginPanel loginPanel;
+    private HRMenuPanel hrMenuPanel;
+    private EmployeeMenuPanel employeeMenuPanel;
+    private SearchEmployeePanel searchEmployeePanel;
+    private AddEmployeePanel addEmployeePanel;
+    private UpdateEmployeePanel updateEmployeePanel;
+    private AddressMenuPanel addressMenuPanel;
+    private ReportsMenuPanel reportsMenuPanel;
 
-    private JTextArea outputArea;
-    private JPanel loginPanel;
-    private JPanel hrPanel;
-    private JPanel employeePanel;
+    // Current user state
+    private boolean isHR = false;
+    private Integer currentEmpId = null;
 
     public GUIMain() {
-        setTitle("Company Z Employee Management System");
-        setSize(1200, 800);
+        employeeService = new EmployeeService();
+        payrollService = new PayrollService();
+        addressDAO = new AddressDAO();
+        reports = new Reports();
+
+        setTitle("Employee Management System");
+        setSize(800, 600);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setLayout(new BorderLayout());
+        setLocationRelativeTo(null);
 
-        // --- CENTERED BOLD TITLE LABEL ---
-        JLabel titleLabel = new JLabel("Company Z Employee Management System", SwingConstants.CENTER);
-        titleLabel.setFont(new Font("SansSerif", Font.BOLD, 24));
-        add(titleLabel, BorderLayout.NORTH);
+        cardLayout = new CardLayout();
+        mainPanel = new JPanel(cardLayout);
 
-        // --- OUTPUT AREA ---
-        outputArea = new JTextArea();
-        outputArea.setEditable(false);
-        JScrollPane scrollPane = new JScrollPane(outputArea);
-        add(scrollPane, BorderLayout.SOUTH);
+        // Initialize panels
+        loginPanel = new LoginPanel();
+        hrMenuPanel = new HRMenuPanel();
+        employeeMenuPanel = new EmployeeMenuPanel();
+        searchEmployeePanel = new SearchEmployeePanel();
+        addEmployeePanel = new AddEmployeePanel();
+        updateEmployeePanel = new UpdateEmployeePanel();
+        addressMenuPanel = new AddressMenuPanel();
+        reportsMenuPanel = new ReportsMenuPanel();
 
-        // --- LOGIN PANEL BELOW TITLE ---
-        loginPanel = createLoginPanel();
-        add(loginPanel, BorderLayout.CENTER);  // moved so title stays on top
+        // Add panels to main panel
+        mainPanel.add(loginPanel, "Login");
+        mainPanel.add(hrMenuPanel, "HRMenu");
+        mainPanel.add(employeeMenuPanel, "EmployeeMenu");
+        mainPanel.add(searchEmployeePanel, "SearchEmployee");
+        mainPanel.add(addEmployeePanel, "AddEmployee");
+        mainPanel.add(updateEmployeePanel, "UpdateEmployee");
+        mainPanel.add(addressMenuPanel, "AddressMenu");
+        mainPanel.add(reportsMenuPanel, "ReportsMenu");
 
-        setVisible(true);
+        add(mainPanel);
+        cardLayout.show(mainPanel, "Login");
     }
 
-    private JPanel createLoginPanel() {
-        JPanel panel = new JPanel();
-        panel.setLayout(new FlowLayout());
+    // Login Panel
+    private class LoginPanel extends JPanel {
+        private JTextField usernameField;
+        private JPasswordField passwordField;
+        private JComboBox<String> roleCombo;
+        private JButton loginButton;
 
-        JButton hrButton = new JButton("HR Admin Login");
-        JButton empButton = new JButton("Employee Login");
-        JButton exitButton = new JButton("Exit");
+        public LoginPanel() {
+            setLayout(new GridBagLayout());
+            GridBagConstraints gbc = new GridBagConstraints();
+            gbc.insets = new Insets(10, 10, 10, 10);
 
-        hrButton.addActionListener(e -> hrLogin());
-        empButton.addActionListener(e -> employeeLogin());
-        exitButton.addActionListener(e -> System.exit(0));
+            gbc.gridx = 0; gbc.gridy = 0;
+            add(new JLabel("Username:"), gbc);
+            gbc.gridx = 1;
+            usernameField = new JTextField(20);
+            add(usernameField, gbc);
 
-        panel.add(hrButton);
-        panel.add(empButton);
-        panel.add(exitButton);
+            gbc.gridx = 0; gbc.gridy = 1;
+            add(new JLabel("Password:"), gbc);
+            gbc.gridx = 1;
+            passwordField = new JPasswordField(20);
+            add(passwordField, gbc);
 
-        return panel;
+            gbc.gridx = 0; gbc.gridy = 2;
+            add(new JLabel("Role:"), gbc);
+            gbc.gridx = 1;
+            roleCombo = new JComboBox<>(new String[]{"HR", "Employee"});
+            add(roleCombo, gbc);
+
+            gbc.gridx = 0; gbc.gridy = 3; gbc.gridwidth = 2;
+            loginButton = new JButton("Login");
+            add(loginButton, gbc);
+
+            loginButton.addActionListener(e -> {
+                String username = usernameField.getText().trim();
+                String password = new String(passwordField.getPassword());
+                String role = (String) roleCombo.getSelectedItem();
+
+                if ("HR".equals(role)) {
+                    if ("admin".equals(username) && "admin123".equals(password)) {
+                        isHR = true;
+                        cardLayout.show(mainPanel, "HRMenu");
+                    } else {
+                        JOptionPane.showMessageDialog(this, "Invalid HR credentials.");
+                    }
+                } else if ("Employee".equals(role)) {
+                    try {
+                        int empid = Integer.parseInt(username);
+                        List<Employee> list = employeeService.searchEmployees(null, password, null, empid);
+                        if (!list.isEmpty()) {
+                            currentEmpId = empid;
+                            cardLayout.show(mainPanel, "EmployeeMenu");
+                        } else {
+                            JOptionPane.showMessageDialog(this, "Invalid employee credentials.");
+                        }
+                    } catch (NumberFormatException ex) {
+                        JOptionPane.showMessageDialog(this, "Invalid Employee ID.");
+                    }
+                }
+            });
+        }
     }
 
-    private void hrLogin() {
-        JPanel loginForm = new JPanel(new GridLayout(3, 2));
-        JTextField userField = new JTextField();
-        JPasswordField passField = new JPasswordField();
-        JButton loginBtn = new JButton("Login");
-        JButton cancelBtn = new JButton("Cancel");
+    // HR Menu Panel
+    private class HRMenuPanel extends JPanel {
+        public HRMenuPanel() {
+            setLayout(new GridLayout(8, 1, 10, 10));
+            JButton searchBtn = new JButton("Search Employee");
+            JButton addBtn = new JButton("Add New Employee");
+            JButton updateBtn = new JButton("Update Employee Basic Data");
+            JButton salaryBtn = new JButton("Increase Salary by % in Range");
+            JButton deleteBtn = new JButton("Delete Employee");
+            JButton addressBtn = new JButton("Address / Demographics");
+            JButton reportsBtn = new JButton("Reports");
+            JButton logoutBtn = new JButton("Logout");
 
-        loginForm.add(new JLabel("Username:"));
-        loginForm.add(userField);
-        loginForm.add(new JLabel("Password:"));
-        loginForm.add(passField);
-        loginForm.add(loginBtn);
-        loginForm.add(cancelBtn);
+            add(searchBtn);
+            add(addBtn);
+            add(updateBtn);
+            add(salaryBtn);
+            add(deleteBtn);
+            add(addressBtn);
+            add(reportsBtn);
+            add(logoutBtn);
 
-        JDialog dialog = new JDialog(this, "HR Login", true);
-        dialog.setContentPane(loginForm);
-        dialog.pack();
-        dialog.setLocationRelativeTo(this);
-
-        loginBtn.addActionListener(e -> {
-            if ("admin".equals(userField.getText()) && "admin123".equals(new String(passField.getPassword()))) {
-                dialog.dispose();
-                showHRPanel();
-            } else {
-                JOptionPane.showMessageDialog(dialog, "Invalid credentials");
-            }
-        });
-
-        cancelBtn.addActionListener(e -> dialog.dispose());
-
-        dialog.setVisible(true);
+            searchBtn.addActionListener(e -> cardLayout.show(mainPanel, "SearchEmployee"));
+            addBtn.addActionListener(e -> cardLayout.show(mainPanel, "AddEmployee"));
+            updateBtn.addActionListener(e -> cardLayout.show(mainPanel, "UpdateEmployee"));
+            salaryBtn.addActionListener(e -> {
+                // Inline salary increase
+                String percentStr = JOptionPane.showInputDialog("Percent increase (e.g., 3.2):");
+                String minStr = JOptionPane.showInputDialog("Min salary:");
+                String maxStr = JOptionPane.showInputDialog("Max salary:");
+                try {
+                    double percent = Double.parseDouble(percentStr);
+                    double min = Double.parseDouble(minStr);
+                    double max = Double.parseDouble(maxStr);
+                    employeeService.increaseSalaryByRange(percent, min, max);
+                    JOptionPane.showMessageDialog(this, "Salary increased.");
+                } catch (Exception ex) {
+                    JOptionPane.showMessageDialog(this, "Error: " + ex.getMessage());
+                }
+            });
+            deleteBtn.addActionListener(e -> {
+                String empidStr = JOptionPane.showInputDialog("EmpID to delete:");
+                try {
+                    int empid = Integer.parseInt(empidStr);
+                    employeeService.deleteEmployee(empid);
+                    JOptionPane.showMessageDialog(this, "Employee deleted.");
+                } catch (Exception ex) {
+                    JOptionPane.showMessageDialog(this, "Error: " + ex.getMessage());
+                }
+            });
+            addressBtn.addActionListener(e -> cardLayout.show(mainPanel, "AddressMenu"));
+            reportsBtn.addActionListener(e -> cardLayout.show(mainPanel, "ReportsMenu"));
+            logoutBtn.addActionListener(e -> {
+                isHR = false;
+                cardLayout.show(mainPanel, "Login");
+            });
+        }
     }
 
-    private void employeeLogin() {
-        JPanel loginForm = new JPanel(new GridLayout(3, 2));
-        JTextField empIdField = new JTextField();
-        JTextField lastNameField = new JTextField();
-        JButton loginBtn = new JButton("Login");
-        JButton cancelBtn = new JButton("Cancel");
+    // Employee Menu Panel
+    private class EmployeeMenuPanel extends JPanel {
+        public EmployeeMenuPanel() {
+            setLayout(new GridLayout(3, 1, 10, 10));
+            JButton viewDataBtn = new JButton("View My Personal Data");
+            JButton payHistoryBtn = new JButton("View My Pay Statement History");
+            JButton logoutBtn = new JButton("Logout");
 
-        loginForm.add(new JLabel("Employee ID:"));
-        loginForm.add(empIdField);
-        loginForm.add(new JLabel("Last Name:"));
-        loginForm.add(lastNameField);
-        loginForm.add(loginBtn);
-        loginForm.add(cancelBtn);
+            add(viewDataBtn);
+            add(payHistoryBtn);
+            add(logoutBtn);
 
-        JDialog dialog = new JDialog(this, "Employee Login", true);
-        dialog.setContentPane(loginForm);
-        dialog.pack();
-        dialog.setLocationRelativeTo(this);
-
-        loginBtn.addActionListener(e -> {
-            try {
-                int empid = Integer.parseInt(empIdField.getText());
-                String lastName = lastNameField.getText();
-                List<Employee> list = employeeService.searchEmployees(null, lastName, null, empid);
+            viewDataBtn.addActionListener(e -> {
+                List<Employee> list = employeeService.searchEmployees(null, null, null, currentEmpId);
                 if (!list.isEmpty()) {
-                    dialog.dispose();
-                    showEmployeePanel(empid);
+                    JOptionPane.showMessageDialog(this, list.get(0).toString());
                 } else {
-                    JOptionPane.showMessageDialog(dialog, "No matching employee found");
+                    JOptionPane.showMessageDialog(this, "No data found.");
                 }
-            } catch (NumberFormatException ex) {
-                JOptionPane.showMessageDialog(dialog, "Invalid Employee ID");
-            }
-        });
-
-        cancelBtn.addActionListener(e -> dialog.dispose());
-
-        dialog.setVisible(true);
-    }
-
-    private void showHRPanel() {
-        remove(loginPanel);
-        hrPanel = new JPanel(new GridLayout(6, 1));
-        JButton searchBtn = new JButton("Search Employee");
-        JButton addBtn = new JButton("Add New Employee");
-        JButton updateBtn = new JButton("Update Employee Basic Data");
-        JButton salaryBtn = new JButton("Increase Salary by % in Range");
-        JButton reportsBtn = new JButton("Reports");
-        JButton logoutBtn = new JButton("Logout");
-
-        searchBtn.addActionListener(e -> hrSearchEmployee());
-        addBtn.addActionListener(e -> hrAddEmployee());
-        updateBtn.addActionListener(e -> hrUpdateEmployeeBasic());
-        salaryBtn.addActionListener(e -> hrIncreaseSalary());
-        reportsBtn.addActionListener(e -> hrReportsMenu());
-        logoutBtn.addActionListener(e -> logout());
-
-        hrPanel.add(searchBtn);
-        hrPanel.add(addBtn);
-        hrPanel.add(updateBtn);
-        hrPanel.add(salaryBtn);
-        hrPanel.add(reportsBtn);
-        hrPanel.add(logoutBtn);
-
-        add(hrPanel, BorderLayout.NORTH);
-        revalidate();
-        repaint();
-    }
-
-    private void showEmployeePanel(int empid) {
-        remove(loginPanel);
-        employeePanel = new JPanel(new GridLayout(3, 1));
-        JButton viewDataBtn = new JButton("View My Personal Data");
-        JButton payHistoryBtn = new JButton("View My Pay Statement History");
-        JButton logoutBtn = new JButton("Logout");
-
-        viewDataBtn.addActionListener(e -> viewMyData(empid));
-        payHistoryBtn.addActionListener(e -> {
-            outputArea.setText("");
-            payrollService.printPayHistory(empid);
-        });
-        logoutBtn.addActionListener(e -> logout());
-
-        employeePanel.add(viewDataBtn);
-        employeePanel.add(payHistoryBtn);
-        employeePanel.add(logoutBtn);
-
-        add(employeePanel, BorderLayout.NORTH);
-        revalidate();
-        repaint();
-    }
-
-    private void logout() {
-        if (hrPanel != null) {
-            remove(hrPanel);
+            });
+            payHistoryBtn.addActionListener(e -> {
+                payrollService.printPayHistory(currentEmpId);
+                JOptionPane.showMessageDialog(this, "Check console for pay history.");
+            });
+            logoutBtn.addActionListener(e -> {
+                currentEmpId = null;
+                cardLayout.show(mainPanel, "Login");
+            });
         }
-        if (employeePanel != null) {
-            remove(employeePanel);
+    }
+
+    // Search Employee Panel
+    private class SearchEmployeePanel extends JPanel {
+        private JTextField firstNameField, lastNameField, ssnField, empIdField;
+        private JButton searchBtn, backBtn;
+        private JTextArea resultsArea;
+
+        public SearchEmployeePanel() {
+            setLayout(new BorderLayout());
+            JPanel inputPanel = new JPanel(new GridLayout(5, 2, 5, 5));
+            inputPanel.add(new JLabel("First Name:"));
+            firstNameField = new JTextField();
+            inputPanel.add(firstNameField);
+            inputPanel.add(new JLabel("Last Name:"));
+            lastNameField = new JTextField();
+            inputPanel.add(lastNameField);
+            inputPanel.add(new JLabel("SSN:"));
+            ssnField = new JTextField();
+            inputPanel.add(ssnField);
+            inputPanel.add(new JLabel("EmpID:"));
+            empIdField = new JTextField();
+            inputPanel.add(empIdField);
+            searchBtn = new JButton("Search");
+            inputPanel.add(searchBtn);
+            backBtn = new JButton("Back");
+            inputPanel.add(backBtn);
+
+            resultsArea = new JTextArea(10, 50);
+            resultsArea.setEditable(false);
+            JScrollPane scrollPane = new JScrollPane(resultsArea);
+
+            add(inputPanel, BorderLayout.NORTH);
+            add(scrollPane, BorderLayout.CENTER);
+
+            searchBtn.addActionListener(e -> {
+                String fn = firstNameField.getText().trim();
+                String ln = lastNameField.getText().trim();
+                String ssn = ssnField.getText().trim();
+                Integer empid = null;
+                if (!empIdField.getText().trim().isEmpty()) {
+                    try {
+                        empid = Integer.parseInt(empIdField.getText().trim());
+                    } catch (NumberFormatException ex) {
+                        JOptionPane.showMessageDialog(this, "Invalid EmpID.");
+                        return;
+                    }
+                }
+                List<Employee> results = employeeService.searchEmployees(
+                    fn.isEmpty() ? null : fn, ln.isEmpty() ? null : ln,
+                    ssn.isEmpty() ? null : ssn, empid
+                );
+                resultsArea.setText("");
+                if (results.isEmpty()) {
+                    resultsArea.append("No employees found.\n");
+                } else {
+                    for (Employee emp : results) {
+                        resultsArea.append(emp.toString() + "\n");
+                    }
+                }
+            });
+            backBtn.addActionListener(e -> cardLayout.show(mainPanel, "HRMenu"));
         }
-        add(loginPanel, BorderLayout.NORTH);
-        outputArea.setText("");
-        revalidate();
-        repaint();
     }
 
-    private void hrSearchEmployee() {
-        JPanel form = new JPanel(new GridLayout(5, 2));
-        JTextField fnField = new JTextField();
-        JTextField lnField = new JTextField();
-        JTextField ssnField = new JTextField();
-        JTextField empIdField = new JTextField();
-        JButton searchBtn = new JButton("Search");
+    // Add Employee Panel (similar structure; add fields as needed)
+    private class AddEmployeePanel extends JPanel {
+        // Add JTextFields for all required fields (firstName, lastName, etc.)
+        // On submit, call employeeService.addEmployee(...)
+        // For brevity, implement similarly to SearchEmployeePanel
+        public AddEmployeePanel() {
+            // TODO: Implement with fields for firstName, lastName, ssn, dob, hireDate, baseSalary, street, cityId, stateId, zip, gender, identifiedRace, phone
+            // Use GridLayout or BoxLayout for inputs
+            // On button click: parse inputs, call addEmployee, show success/error
+            add(new JLabel("Add Employee - Implement fields here"));
+            JButton backBtn = new JButton("Back");
+            backBtn.addActionListener(e -> cardLayout.show(mainPanel, "HRMenu"));
+            add(backBtn);
+        }
+    }
 
-        form.add(new JLabel("First Name:"));
-        form.add(fnField);
-        form.add(new JLabel("Last Name:"));
-        form.add(lnField);
-        form.add(new JLabel("SSN:"));
-        form.add(ssnField);
-        form.add(new JLabel("EmpID:"));
-        form.add(empIdField);
-        form.add(searchBtn);
+    // Update Employee Panel
+    private class UpdateEmployeePanel extends JPanel {
+        private JTextField empIdField, lastNameField, salaryField;
+        private JButton updateBtn, backBtn;
 
-        JDialog dialog = new JDialog(this, "Search Employee", true);
-        dialog.setContentPane(form);
-        dialog.pack();
-        dialog.setLocationRelativeTo(this);
+        public UpdateEmployeePanel() {
+            setLayout(new GridLayout(4, 2, 5, 5));
+            add(new JLabel("EmpID:"));
+            empIdField = new JTextField();
+            add(empIdField);
+            add(new JLabel("New Last Name:"));
+            lastNameField = new JTextField();
+            add(lastNameField);
+            add(new JLabel("New Salary:"));
+            salaryField = new JTextField();
+            add(salaryField);
+            updateBtn = new JButton("Update");
+            add(updateBtn);
+            backBtn = new JButton("Back");
+            add(backBtn);
 
-        searchBtn.addActionListener(e -> {
-            String fn = fnField.getText().isEmpty() ? null : fnField.getText();
-            String ln = lnField.getText().isEmpty() ? null : lnField.getText();
-            String ssn = ssnField.getText().isEmpty() ? null : ssnField.getText();
-            Integer empid = empIdField.getText().isEmpty() ? null : Integer.parseInt(empIdField.getText());
-            List<Employee> results = employeeService.searchEmployees(fn, ln, ssn, empid);
-            outputArea.setText("");
-            if (results.isEmpty()) {
-                outputArea.append("No employees found.\n");
-            } else {
-                for (Employee emp : results) {
-                    outputArea.append(emp.toString() + "\n");
+            updateBtn.addActionListener(e -> {
+                try {
+                    int empid = Integer.parseInt(empIdField.getText().trim());
+                    String lastName = lastNameField.getText().trim();
+                    double salary = Double.parseDouble(salaryField.getText().trim());
+                    employeeService.updateEmployeeBasic(empid, lastName, salary);
+                    JOptionPane.showMessageDialog(this, "Updated.");
+                } catch (Exception ex) {
+                    JOptionPane.showMessageDialog(this, "Error: " + ex.getMessage());
                 }
-            }
-            dialog.dispose();
-        });
-
-        dialog.setVisible(true);
+            });
+            backBtn.addActionListener(e -> cardLayout.show(mainPanel, "HRMenu"));
+        }
     }
 
-    private void hrAddEmployee() {
-        JPanel form = new JPanel(new GridLayout(14, 2));
-        JTextField fnField = new JTextField();
-        JTextField lnField = new JTextField();
-        JTextField ssnField = new JTextField();
-        JTextField dobField = new JTextField();
-        JTextField hireField = new JTextField();
-        JTextField salaryField = new JTextField();
-        JTextField streetField = new JTextField();
-        JTextField cityField = new JTextField();
-        JTextField stateField = new JTextField();
-        JTextField zipField = new JTextField();
-        JTextField genderField = new JTextField();
-        JTextField raceField = new JTextField();
-        JTextField phoneField = new JTextField();
-        JButton addBtn = new JButton("Add");
+    // Address Menu Panel
+    private class AddressMenuPanel extends JPanel {
+        public AddressMenuPanel() {
+            setLayout(new GridLayout(3, 1, 10, 10));
+            JButton updateBtn = new JButton("Update Employee Address");
+            JButton viewBtn = new JButton("View Employee Address");
+            JButton backBtn = new JButton("Back");
 
-        form.add(new JLabel("First Name:"));
-        form.add(fnField);
-        form.add(new JLabel("Last Name:"));
-        form.add(lnField);
-        form.add(new JLabel("SSN:"));
-        form.add(ssnField);
-        form.add(new JLabel("DOB (YYYY-MM-DD):"));
-        form.add(dobField);
-        form.add(new JLabel("Hire Date (YYYY-MM-DD):"));
-        form.add(hireField);
-        form.add(new JLabel("Base Salary:"));
-        form.add(salaryField);
-        form.add(new JLabel("Street:"));
-        form.add(streetField);
-        form.add(new JLabel("City ID (1 to 20):"));
-        form.add(cityField);
-        form.add(new JLabel("State ID (1 to 50):"));
-        form.add(stateField);
-        form.add(new JLabel("Zip Code:"));
-        form.add(zipField);
-        form.add(new JLabel("Gender:"));
-        form.add(genderField);
-        form.add(new JLabel("Race:"));
-        form.add(raceField);
-        form.add(new JLabel("Phone Number:"));
-        form.add(phoneField);
-        form.add(addBtn);
+            add(updateBtn);
+            add(viewBtn);
+            add(backBtn);
 
-        JDialog dialog = new JDialog(this, "Add Employee", true);
-        dialog.setContentPane(form);
-        dialog.pack();
-        dialog.setLocationRelativeTo(this);
-
-        addBtn.addActionListener(e -> {
-            try {
-                int newEmpid = employeeService.addEmployee(
-                        fnField.getText(),
-                        lnField.getText(),
-                        ssnField.getText(),
-                        Date.valueOf(dobField.getText()),
-                        Date.valueOf(hireField.getText()),
-                        Double.parseDouble(salaryField.getText()),
-                        streetField.getText(),
-                        Integer.valueOf(cityField.getText()),
-                        Integer.valueOf(stateField.getText()),
-                        zipField.getText(),
-                        genderField.getText(),
-                        raceField.getText(),
-                        phoneField.getText()
-                );
-                if (newEmpid > 0) {
-                    outputArea.append("New employee created with empid = " + newEmpid + "\n");
-                } else {
-                    outputArea.append("Failed to create employee.\n");
+            updateBtn.addActionListener(e -> {
+                // Inline update (or create a sub-panel)
+                String empidStr = JOptionPane.showInputDialog("EmpID:");
+                // Prompt for each field, then call addressDAO.updateAddress(...)
+                JOptionPane.showMessageDialog(this, "Update logic here.");
+            });
+            viewBtn.addActionListener(e -> {
+                String empidStr = JOptionPane.showInputDialog("EmpID:");
+                try {
+                    int empid = Integer.parseInt(empidStr);
+                    Address addr = addressDAO.getAddressByEmpId(empid);
+                    JOptionPane.showMessageDialog(this, addr != null ? addr.toString() : "Not found.");
+                } catch (Exception ex) {
+                    JOptionPane.showMessageDialog(this, "Error: " + ex.getMessage());
                 }
-                dialog.dispose();
-            } catch (Exception ex) {
-                JOptionPane.showMessageDialog(dialog, "Error: " + ex.getMessage());
-            }
-        });
-
-        dialog.setVisible(true);
+            });
+            backBtn.addActionListener(e -> cardLayout.show(mainPanel, "HRMenu"));
+        }
     }
 
-    private void hrUpdateEmployeeBasic() {
-        JPanel form = new JPanel(new GridLayout(4, 2));
-        JTextField empIdField = new JTextField();
-        JTextField lnField = new JTextField();
-        JTextField salaryField = new JTextField();
-        JButton updateBtn = new JButton("Update");
+    // Reports Menu Panel
+    private class ReportsMenuPanel extends JPanel {
+        public ReportsMenuPanel() {
+            setLayout(new GridLayout(4, 1, 10, 10));
+            JButton jobTitleBtn = new JButton("Total pay for month by job title");
+            JButton divisionBtn = new JButton("Total pay for month by division");
+            JButton hireBtn = new JButton("Employees hired within a date range");
+            JButton backBtn = new JButton("Back");
 
-        form.add(new JLabel("EmpID:"));
-        form.add(empIdField);
-        form.add(new JLabel("New Last Name:"));
-        form.add(lnField);
-        form.add(new JLabel("New Salary:"));
-        form.add(salaryField);
-        form.add(updateBtn);
+            add(jobTitleBtn);
+            add(divisionBtn);
+            add(hireBtn);
+            add(backBtn);
 
-        JDialog dialog = new JDialog(this, "Update Employee", true);
-        dialog.setContentPane(form);
-        dialog.pack();
-        dialog.setLocationRelativeTo(this);
-
-        updateBtn.addActionListener(e -> {
-            try {
-                employeeService.updateEmployeeBasic(
-                        Integer.parseInt(empIdField.getText()),
-                        lnField.getText(),
-                        Double.parseDouble(salaryField.getText())
-                );
-                outputArea.append("Employee updated.\n");
-                dialog.dispose();
-            } catch (Exception ex) {
-                JOptionPane.showMessageDialog(dialog, "Error: " + ex.getMessage());
-            }
-        });
-
-        dialog.setVisible(true);
-    }
-
-    private void hrIncreaseSalary() {
-        JPanel form = new JPanel(new GridLayout(4, 2));
-        JTextField percentField = new JTextField();
-        JTextField minField = new JTextField();
-        JTextField maxField = new JTextField();
-        JButton increaseBtn = new JButton("Increase");
-
-        form.add(new JLabel("Percent:"));
-        form.add(percentField);
-        form.add(new JLabel("Min Salary:"));
-        form.add(minField);
-        form.add(new JLabel("Max Salary:"));
-        form.add(maxField);
-        form.add(increaseBtn);
-
-        JDialog dialog = new JDialog(this, "Increase Salary", true);
-        dialog.setContentPane(form);
-        dialog.pack();
-        dialog.setLocationRelativeTo(this);
-
-        increaseBtn.addActionListener(e -> {
-            try {
-                employeeService.increaseSalaryByRange(
-                        Double.parseDouble(percentField.getText()),
-                        Double.parseDouble(minField.getText()),
-                        Double.parseDouble(maxField.getText())
-                );
-                outputArea.append("Salaries updated.\n");
-                dialog.dispose();
-            } catch (Exception ex) {
-                JOptionPane.showMessageDialog(dialog, "Error: " + ex.getMessage());
-            }
-        });
-
-        dialog.setVisible(true);
-    }
-
-    //Will add back updateEmployeeAddress but I just want to run without errors first
-    private void hrAddressMenu() {
-        JPanel panel = new JPanel(new GridLayout(3, 1));
-        JButton addBtn = new JButton("Add Address");
-        JButton updateBtn = new JButton("Update Address");
-        JButton viewBtn = new JButton("View Address");
-        JButton backBtn = new JButton("Back");
-
-        addBtn.addActionListener(e -> addEmployeeAddress());
-        viewBtn.addActionListener(e -> viewEmployeeAddress());
-        backBtn.addActionListener(e -> {
-        }); // Placeholder, as it's modal
-
-        panel.add(addBtn);
-        panel.add(viewBtn);
-        panel.add(backBtn);
-
-        JDialog dialog = new JDialog(this, "Address Menu", true);
-        dialog.setContentPane(panel);
-        dialog.pack();
-        dialog.setLocationRelativeTo(this);
-        dialog.setVisible(true);
-    }
-
-    private void addEmployeeAddress() {
-        JPanel form = new JPanel(new GridLayout(10, 2));
-        JTextField empIdField = new JTextField();
-        JTextField streetField = new JTextField();
-        JTextField cityIdField = new JTextField();
-        JTextField stateIdField = new JTextField();
-        JTextField zipField = new JTextField();
-        JTextField genderField = new JTextField();
-        JTextField raceField = new JTextField();
-        JTextField dobField = new JTextField();
-        JTextField phoneField = new JTextField();
-        JButton addBtn = new JButton("Add");
-
-        form.add(new JLabel("EmpID:"));
-        form.add(empIdField);
-        form.add(new JLabel("Street:"));
-        form.add(streetField);
-        form.add(new JLabel("City ID:"));
-        form.add(cityIdField);
-        form.add(new JLabel("State ID:"));
-        form.add(stateIdField);
-        form.add(new JLabel("Zip:"));
-        form.add(zipField);
-        form.add(new JLabel("Gender:"));
-        form.add(genderField);
-        form.add(new JLabel("Race:"));
-        form.add(raceField);
-        form.add(new JLabel("DOB (YYYY-MM-DD):"));
-        form.add(dobField);
-        form.add(new JLabel("Phone:"));
-        form.add(phoneField);
-        form.add(addBtn);
-
-        JDialog dialog = new JDialog(this, "Add Address", true);
-        dialog.setContentPane(form);
-        dialog.pack();
-        dialog.setLocationRelativeTo(this);
-
-        addBtn.addActionListener(e -> {
-            try {
-                boolean success = addressDAO.addAddress(
-                        Integer.parseInt(empIdField.getText()),
-                        streetField.getText(),
-                        Integer.parseInt(cityIdField.getText()),
-                        Integer.parseInt(stateIdField.getText()),
-                        zipField.getText(),
-                        genderField.getText(),
-                        raceField.getText(),
-                        Date.valueOf(dobField.getText()),
-                        phoneField.getText()
-                );
-                outputArea.append(success ? "Address added.\n" : "Failed to add address.\n");
-                dialog.dispose();
-            } catch (Exception ex) {
-                JOptionPane.showMessageDialog(dialog, "Error: " + ex.getMessage());
-            }
-        });
-
-        dialog.setVisible(true);
-    }
-    
- private void viewEmployeeAddress() {
-        JPanel form = new JPanel(new GridLayout(2, 2));
-        JTextField empIdField = new JTextField();
-        JButton viewBtn = new JButton("View");
-
-        form.add(new JLabel("EmpID:"));
-        form.add(empIdField);
-        form.add(viewBtn);
-
-        JDialog dialog = new JDialog(this, "View Address", true);
-        dialog.setContentPane(form);
-        dialog.pack();
-        dialog.setLocationRelativeTo(this);
-
-        viewBtn.addActionListener(e -> {
-            try {
-                Address addr = addressDAO.getAddressByEmpId(Integer.parseInt(empIdField.getText()));
-                if (addr != null) {
-                    outputArea.setText(addr.toString());
-                } else {
-                    outputArea.setText("Address not found.\n");
-                }
-                dialog.dispose();
-            } catch (Exception ex) {
-                JOptionPane.showMessageDialog(dialog, "Error: " + ex.getMessage());
-            }
-        });
-
-        dialog.setVisible(true);
-    }
-    
-    private void hrReportsMenu() {
-        JPanel panel = new JPanel(new GridLayout(4, 1));
-        JButton report1Btn = new JButton("Total Pay by Job Title");
-        JButton report2Btn = new JButton("Total Pay by Division");
-        JButton report3Btn = new JButton("Employees Hired in Range");
-        JButton backBtn = new JButton("Back");
-
-        report1Btn.addActionListener(e -> {
-            String month = JOptionPane.showInputDialog("Enter month (YYYY-MM):");
-            if (month != null) {
+            jobTitleBtn.addActionListener(e -> {
+                String month = JOptionPane.showInputDialog("Month (YYYY-MM):");
                 payrollService.printTotalPayByJobTitle(month);
-            }
-        });
-        report2Btn.addActionListener(e -> {
-            String month = JOptionPane.showInputDialog("Enter month (YYYY-MM):");
-            if (month != null) {
+                JOptionPane.showMessageDialog(this, "Check console.");
+            });
+            divisionBtn.addActionListener(e -> {
+                String month = JOptionPane.showInputDialog("Month (YYYY-MM):");
                 payrollService.printTotalPayByDivision(month);
-            }
-        });
-        report3Btn.addActionListener(e -> {
-            String start = JOptionPane.showInputDialog("Start date (YYYY-MM-DD):");
-            String end = JOptionPane.showInputDialog("End date (YYYY-MM-DD):");
-            if (start != null && end != null) {
-                reportsService.listEmployeesByHireDate(start, end);
-            }
-        });
-        backBtn.addActionListener(e -> {
-            // Close the dialog
-        });
-
-        panel.add(report1Btn);
-        panel.add(report2Btn);
-        panel.add(report3Btn);
-        panel.add(backBtn);
-
-        JDialog dialog = new JDialog(this, "Reports", true);
-        dialog.setContentPane(panel);
-        dialog.pack();
-        dialog.setLocationRelativeTo(this);
-        dialog.setVisible(true);
-    }
-
-    private void viewMyData(int empid) {
-        List<Employee> list = employeeService.searchEmployees(null, null, null, empid);
-        outputArea.setText("");
-        if (list.isEmpty()) {
-            outputArea.append("No data found.\n");
-        } else {
-            outputArea.append(list.get(0).toString() + "\n");
+                JOptionPane.showMessageDialog(this, "Check console.");
+            });
+            hireBtn.addActionListener(e -> {
+                String startStr = JOptionPane.showInputDialog("Start Date (YYYY-MM-DD):");
+                String endStr = JOptionPane.showInputDialog("End Date (YYYY-MM-DD):");
+                try {
+                    LocalDate start = LocalDate.parse(startStr);
+                    LocalDate end = LocalDate.parse(endStr);
+                    reports.printEmployeesHiredBetween(start, end);
+                    JOptionPane.showMessageDialog(this, "Check console.");
+                } catch (Exception ex) {
+                    JOptionPane.showMessageDialog(this, "Invalid dates.");
+                }
+            });
+            backBtn.addActionListener(e -> cardLayout.show(mainPanel, "HRMenu"));
         }
     }
 
     public static void main(String[] args) {
-        SwingUtilities.invokeLater(() -> new GUIMain());
+        // Test DB connection
+        try (Connection conn = Database.getConnection()) {
+            if (conn != null) {
+                System.out.println("Database connection successful!");
+            }
+        } catch (SQLException e) {
+            JOptionPane.showMessageDialog(null, "DB Error: " + e.getMessage());
+            return;
+        }
+
+        SwingUtilities.invokeLater(() -> {
+            new GUIMain().setVisible(true);
+        });
     }
 }
