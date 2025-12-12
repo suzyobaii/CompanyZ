@@ -89,7 +89,7 @@ public class EmployeeDAO {
         }
 
         // Add address
-        addressService.addAddress(empId, street, cityId, stateId, zip, gender, identifiedRace, dob, phone);
+        addressService.addAddress(empId, street, cityId, stateId, zip, gender, identifiedRace, phone);
 
         return empId;
     }

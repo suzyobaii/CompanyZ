@@ -437,7 +437,7 @@ public class GUIMain extends JFrame {
     }
 
     private void addEmployeeAddress() {
-        JPanel form = new JPanel(new GridLayout(10, 2));
+        JPanel form = new JPanel(new GridLayout(9, 2));
         JTextField empIdField = new JTextField();
         JTextField streetField = new JTextField();
         JTextField cityIdField = new JTextField();
@@ -445,7 +445,6 @@ public class GUIMain extends JFrame {
         JTextField zipField = new JTextField();
         JTextField genderField = new JTextField();
         JTextField raceField = new JTextField();
-        JTextField dobField = new JTextField();
         JTextField phoneField = new JTextField();
         JButton addBtn = new JButton("Add");
 
@@ -463,8 +462,6 @@ public class GUIMain extends JFrame {
         form.add(genderField);
         form.add(new JLabel("Race:"));
         form.add(raceField);
-        form.add(new JLabel("DOB (YYYY-MM-DD):"));
-        form.add(dobField);
         form.add(new JLabel("Phone:"));
         form.add(phoneField);
         form.add(addBtn);
@@ -484,7 +481,6 @@ public class GUIMain extends JFrame {
                         zipField.getText(),
                         genderField.getText(),
                         raceField.getText(),
-                        Date.valueOf(dobField.getText()),
                         phoneField.getText()
                 );
                 outputArea.append(success ? "Address added.\n" : "Failed to add address.\n");

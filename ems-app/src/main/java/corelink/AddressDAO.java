@@ -1,7 +1,6 @@
 package corelink;
 
 import java.sql.Connection;
-import java.sql.Date;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -12,10 +11,10 @@ import java.util.List;
 public class AddressDAO {
 
     //add a new address for an employee
-    public boolean addAddress(int empid, String street, int cityId, int stateId, String zip, String gender, String identifiedRace, Date dob, String mobilePhone) {
+    public boolean addAddress(int empid, String street, int cityId, int stateId, String zip, String gender, String identifiedRace, String mobilePhone) {
         String sql = "INSERT INTO address " +
-                     "(empid, street, city_id, state_id, zip, gender, identified_race, dob, mobile_phone) " +
-                     "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                     "(empid, street, city_id, state_id, zip, gender, identified_race, phone) " +
+                     "VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
 
         try (Connection conn = Database.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -27,8 +26,7 @@ public class AddressDAO {
             ps.setString(5, zip);
             ps.setString(6, gender);
             ps.setString(7, identifiedRace);
-            ps.setDate(8, dob);
-            ps.setString(9, mobilePhone);
+            ps.setString(8, mobilePhone);
 
             int rows = ps.executeUpdate();
             return rows > 0;
@@ -40,9 +38,9 @@ public class AddressDAO {
 
     //update an employee's address/demographic info
     public boolean updateAddress(int empid, String street, int cityId, int stateId, String zip,
-                                 String gender, String identifiedRace, Date dob, String mobilePhone) {
+                                 String gender, String identifiedRace, String mobilePhone) {
         String sql = "UPDATE address SET street = ?, city_id = ?, state_id = ?, zip = ?, " +
-                     "gender = ?, identified_race = ?, dob = ?, mobile_phone = ? WHERE empid = ?";
+                     "gender = ?, identified_race = ?, phone = ? WHERE empid = ?";
 
         try (Connection conn = Database.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -53,9 +51,8 @@ public class AddressDAO {
             ps.setString(4, zip);
             ps.setString(5, gender);
             ps.setString(6, identifiedRace);
-            ps.setDate(7, dob);
-            ps.setString(8, mobilePhone);
-            ps.setInt(9, empid);
+            ps.setString(7, mobilePhone);
+            ps.setInt(8, empid);
 
             int rows = ps.executeUpdate();
             return rows > 0;
@@ -68,7 +65,7 @@ public class AddressDAO {
     //get a single employee's address info
     public Address getAddressByEmpId(int empid) {
         String sql = "SELECT a.empid, a.street, a.city_id, c.name AS city_name, " +
-                     "a.state_id, s.name AS state_name, a.zip, a.gender, a.identified_race, a.dob, a.mobile_phone " +
+                     "a.state_id, s.name AS state_name, a.zip, a.gender, a.identified_race, a.phone " +
                      "FROM address a " +
                      "JOIN city c ON a.city_id = c.city_id " +
                      "JOIN state s ON a.state_id = s.state_id " +
@@ -91,8 +88,7 @@ public class AddressDAO {
                 addr.setZip(rs.getString("zip"));
                 addr.setGender(rs.getString("gender"));
                 addr.setIdentifiedRace(rs.getString("identified_race"));
-                addr.setDob(rs.getDate("dob"));
-                addr.setMobilePhone(rs.getString("mobile_phone"));
+                addr.setMobilePhone(rs.getString("phone"));
                 return addr;
             }
 
@@ -107,7 +103,7 @@ public class AddressDAO {
     public List<Address> getAllAddresses() {
         List<Address> addresses = new ArrayList<>();
         String sql = "SELECT a.empid, a.street, a.city_id, c.name AS city_name, " +
-                     "a.state_id, s.name AS state_name, a.zip, a.gender, a.identified_race, a.dob, a.mobile_phone " +
+                     "a.state_id, s.name AS state_name, a.zip, a.gender, a.identified_race, a.phone " +
                      "FROM address a " +
                      "JOIN city c ON a.city_id = c.city_id " +
                      "JOIN state s ON a.state_id = s.state_id";
@@ -127,13 +123,12 @@ public class AddressDAO {
                 addr.setZip(rs.getString("zip"));
                 addr.setGender(rs.getString("gender"));
                 addr.setIdentifiedRace(rs.getString("identified_race"));
-                addr.setDob(rs.getDate("dob"));
-                addr.setMobilePhone(rs.getString("mobile_phone"));
+                addr.setMobilePhone(rs.getString("phone"));
                 addresses.add(addr);
             }
 
         } catch (SQLException ex) {
-            System.out.println("Error in getAllAddresses: " + ex.getMessage());
+            throw new RuntimeException("Error in getAllAddresses: " + ex.getMessage());
         }
 
         return addresses;

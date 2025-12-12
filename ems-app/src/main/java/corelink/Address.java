@@ -1,7 +1,5 @@
 package corelink;
 
-import java.sql.Date;
-
 public class Address {
 
     private int empid;
@@ -13,12 +11,11 @@ public class Address {
     private String zip;
     private String gender;
     private String identifiedRace;
-    private Date dob;              // use java.sql.Date for db compatibility
     private String mobilePhone;
 
     // Full constructor
     public Address(int empid, String street, int cityId, int stateId, String zip,
-                   String gender, String identifiedRace, Date dob, String mobilePhone) {
+                   String gender, String identifiedRace, String mobilePhone) {
         this.empid = empid;
         this.street = street;
         this.cityId = cityId;
@@ -26,7 +23,6 @@ public class Address {
         this.zip = zip;
         this.gender = gender;
         this.identifiedRace = identifiedRace;
-        this.dob = dob;
         this.mobilePhone = mobilePhone;
     }
 
@@ -61,9 +57,6 @@ public class Address {
     public String getIdentifiedRace() { return identifiedRace; }
     public void setIdentifiedRace(String identifiedRace) { this.identifiedRace = identifiedRace; }
 
-    public Date getDob() { return dob; }
-    public void setDob(Date dob) { this.dob = dob; }
-
     public String getMobilePhone() { return mobilePhone; }
     public void setMobilePhone(String mobilePhone) { this.mobilePhone = mobilePhone; }
 
@@ -73,8 +66,7 @@ public class Address {
         return String.format(
             "EmpID: %d%nStreet: %s%nCity: %s (ID: %d)%nState: %s (ID: %d)%nZip: %s%nGender: %s%nRace: %s%nDOB: %s%nMobile Phone: %s%n",
             empid, street, cityName != null ? cityName : "N/A", cityId,
-            stateName != null ? stateName : "N/A", stateId, zip, gender, identifiedRace,
-            dob != null ? dob.toString() : "N/A", mobilePhone
+            stateName != null ? stateName : "N/A", stateId, zip, gender, identifiedRace, mobilePhone
         );
     }
 }
